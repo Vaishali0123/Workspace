@@ -1,41 +1,43 @@
 "use client";
 import { API } from "@/app/utils/helpers";
 import axios from "axios";
-import React, { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import React, { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { HiOutlineCloudUpload } from "react-icons/hi";
 import { MdAdd } from "react-icons/md";
 import { PiVideoFill } from "react-icons/pi";
 import { RxCross2 } from "react-icons/rx";
-import { useAuthContext } from "@/app/Auth/Components/auth";
 
-const Page = () => {
+const PageContent = () => {
   const [files, setFiles] = useState<File[]>([]);
   const searchParams = useSearchParams();
-  const { data } = useAuthContext();
   const communityId = searchParams.get("communityId");
   const topicId = searchParams.get("topicId");
+  const userId = searchParams.get("userId");
+  const router = useRouter();
   const [postName, setPostName] = useState("");
   const [postDesc, setPostDesc] = useState("");
   const [uploadProgress, setUploadProgress] = useState<number[]>([]);
   const [uploading, setUploading] = useState(false);
+  console.log(uploading);
+  const [load, setLoad] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState<boolean[]>([]);
   const [uploadError, setUploadError] = useState<string[]>([]);
   // const [communityId, setCommunityId] = useState("");
-  const [error, setError] = useState("");
-  const [activePopupId, setActivePopupId] = useState<string | null>(null); // State to track the active community popup
+  // const [count, setCount] = useState(0);
   const [postFiles, setPostFiles] = useState<File[]>([]);
   const [thumbnails, setThumbnails] = useState<{ [key: number]: File | null }>(
     {}
   );
-  const [selectedFiles, setSelectFiles] = useState(files);
+  const [thumbnail, setThumbnail] = useState<File>();
+  // const [selectedFiles, setSelectFiles] = useState(files);
   const [tags, setTags] = useState<string[]>([]);
   const [inputValue, setInputValue] = useState<string>("");
 
-  interface IPostFile extends File {
-    type: string;
-    size: number;
-  }
+  // interface IPostFile extends File {
+  //   type: string;
+  //   size: number;
+  // }
 
   // Function to add a tag
   const addTag = () => {
@@ -49,7 +51,7 @@ const Page = () => {
   const removeTag = (index: number) => {
     setTags(tags.filter((_, i) => i !== index));
   };
-
+  console.log(postFiles, "opo");
   // const createPost = async (
   //   postName: string,
   //   postDesc: string,
@@ -104,14 +106,6 @@ const Page = () => {
 
     setPostFiles((prevFiles) => [...prevFiles, ...files]);
     setThumbnails(updatedThumbnails);
-  };
-  const handleThumbnail = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    index: number
-  ) => {
-    if (e.target.files?.[0]) {
-      setThumbnails((prev) => ({ ...prev, [index]: e.target.files![0] }));
-    }
   };
 
   const removeFile = (index: number) => {
@@ -243,8 +237,9 @@ const Page = () => {
   const uploadFilesAndCreatePost = async (
     postName: string,
     postDesc: string,
-    selectedFiles: File[],
-    isVideoFirst: boolean,
+    postFiles: File[],
+    // selectedFiles: File[],
+    // isVideoFirst: boolean,
     tags: string[],
     userId: string,
     communityId: string,
@@ -255,76 +250,85 @@ const Page = () => {
     setUploadError: (errors: string[]) => void,
     setUploading: (uploading: boolean) => void
   ): Promise<void> => {
-    if (!selectedFiles.length) {
+    if (!postFiles.length) {
       alert("Please select at least one file.");
       return;
     }
 
     setUploading(true);
-    setUploadSuccess(Array(selectedFiles.length).fill(false));
-    setUploadError(Array(selectedFiles.length).fill(""));
-
+    setUploadSuccess(Array(postFiles.length).fill(false));
+    setUploadError(Array(postFiles.length).fill(""));
+    setLoad(true);
     try {
       // Step 1: Request Pre-Signed URLs
-      const { data } = await axios.post(`${API}/CreatePost`, {
-        files: selectedFiles.map((file) => ({
-          name: file.name,
-          type: file.type,
-          size: file.size,
-        })),
-        isVideoFirst,
-      });
+      // const response = await axios.post(
+      //   `${API}/createpost/${userId}/${communityId}/${topicId}`,
+      //   {
+      //     files: selectedFiles.map((file) => ({
+      //       name: file.name,
+      //       type: file.type,
+      //       size: file.size,
+      //     })),
 
-      const presignedUrls: string[] = data.presignedUrls;
-      const postContent: any[] = data.data;
+      //     title: postName,
+      //     description: postDesc,
+      //   }
+      // );
 
-      // Step 2: Upload Files to S3
-      await Promise.all(
-        selectedFiles.map(async (file, index) => {
-          try {
-            await axios.put(presignedUrls[index], file, {
-              headers: {
-                "Content-Type": file.type,
-              },
-              onUploadProgress: (progressEvent) => {
-                if (progressEvent.total) {
-                  setUploadProgress((prev: any) => {
-                    const updatedProgress = [...prev];
-                    updatedProgress[index] = Math.round(
-                      (progressEvent.loaded * 100) / progressEvent.total
-                    );
-                    return updatedProgress;
-                  });
-                }
-              },
-            });
+      // const presignedUrls: string[] = data.presignedUrls;
+      // const postContent: any[] = data.data;
 
-            setUploadSuccess((prev: any) => {
-              const updatedSuccess = [...prev];
-              updatedSuccess[index] = true;
-              return updatedSuccess;
-            });
-          } catch (err) {
-            console.error(`Upload failed for ${file.name}:`, err);
-            setUploadError((prev: any) => {
-              const updatedErrors = [...prev];
-              updatedErrors[index] = `Failed to upload ${file.name}`;
-              return updatedErrors;
-            });
-          }
-        })
-      );
+      // // Step 2: Upload Files to S3
+      // await Promise.all(
+      //   selectedFiles.map(async (file, index) => {
+      //     try {
+      //       await axios.put(presignedUrls[index], file, {
+      //         headers: {
+      //           "Content-Type": file.type,
+      //         },
+      //         onUploadProgress: (progressEvent) => {
+      //           if (progressEvent.total) {
+      //             setUploadProgress((prev: any) => {
+      //               const updatedProgress = [...prev];
+      //               updatedProgress[index] = Math.round(
+      //                 (progressEvent.loaded * 100) / progressEvent.total
+      //               );
+      //               return updatedProgress;
+      //             });
+      //           }
+      //         },
+      //       });
+
+      //       setUploadSuccess((prev: any) => {
+      //         const updatedSuccess = [...prev];
+      //         updatedSuccess[index] = true;
+      //         return updatedSuccess;
+      //       });
+      //     } catch (err) {
+      //       console.error(`Upload failed for ${file.name}:`, err);
+      //       setUploadError((prev: any) => {
+      //         const updatedErrors = [...prev];
+      //         updatedErrors[index] = `Failed to upload ${file.name}`;
+      //         return updatedErrors;
+      //       });
+      //     }
+      //   })
+      // );
 
       // Step 3: Create Post in Database
       const formData = new FormData();
       formData.append("title", postName);
       formData.append("description", postDesc);
-      formData.append("isVideoFirst", JSON.stringify(isVideoFirst));
+      postFiles.forEach((file) => {
+        formData.append("files", file); // Append each file individually
+      });
+
+      // formData.append("isVideoFirst", JSON.stringify(isVideoFirst));
       tags.forEach((tag) => formData.append("tags[]", tag));
-      formData.append("postContent", JSON.stringify(postContent));
+      // formData.append("postContent", JSON.stringify(postContent));
 
       const res = await axios.post(
-        `${API}/CreatePost/${userId}/${communityId}/${topicId}`,
+        `${API}/createpost/${userId}/${communityId}/${topicId}`,
         formData,
         {
           headers: {
@@ -332,14 +336,19 @@ const Page = () => {
           },
         }
       );
-
+      if (res?.data?.success) {
+        router.push(
+          `/main/Post?userId=${userId}&communityId=${communityId}&topicId=${topicId}`
+        );
+      }
       console.log("Post created successfully:", res.data);
     } catch (error) {
       console.error("Error during post creation:", error);
-      alert("Failed to create post. Check console for details.");
+      alert("Failed to create post! Try again later");
     } finally {
       setUploading(false);
     }
+    setLoad(false);
   };
 
   return (
@@ -351,7 +360,7 @@ const Page = () => {
             <div className="flex flex-col">
               <div className="text-[16px] font-semibold">Post On Grovyo</div>
               <div className="text-[14px] text-[#6F7787] font-medium">
-                You can add up to 4 images or videos.
+                You can add up to 4 posts or a video
               </div>
             </div>
           </div>
@@ -359,28 +368,37 @@ const Page = () => {
             <div className="font-medium p-2 pn:max-pp:hidden px-5 rounded-lg">
               Discard
             </div>
-            <div
-              onClick={() =>
-                uploadFilesAndCreatePost(
-                  postName,
-                  postDesc,
-                  selectedFiles,
-                  isVideoFirst,
-                  tags,
-                  userId, // Replace with actual user ID
-                  communityId, // Replace with actual community ID
-                  topicId, // Replace with actual topic ID
-                  API, // Replace with actual API URL
-                  setUploadProgress,
-                  setUploadSuccess,
-                  setUploadError,
-                  setUploading
-                )
-              }
-              className="bg-[#4880FF] cursor-pointer font-medium text-white p-2 px-4 pp:px-7 rounded-xl"
-            >
-              Publish
-            </div>
+            {load ? (
+              <div className="bg-[#4880FF] cursor-pointer font-medium text-white p-2 px-4 pp:px-7 rounded-xl">
+                Publishing...
+              </div>
+            ) : (
+              <div
+                onClick={() => {
+                  if (userId && communityId && topicId && API) {
+                    uploadFilesAndCreatePost(
+                      postName,
+                      postDesc,
+                      postFiles,
+                      // selectedFiles,
+                      // isVideoFirst,
+                      tags,
+                      userId, // Replace with actual user ID
+                      communityId, // Replace with actual community ID
+                      topicId, // Replace with actual topic ID
+                      API, // Replace with actual API URL
+                      setUploadProgress,
+                      setUploadSuccess,
+                      setUploadError,
+                      setUploading
+                    );
+                  }
+                }}
+                className="bg-[#4880FF] cursor-pointer font-medium text-white p-2 px-4 pp:px-7 rounded-xl"
+              >
+                Publish
+              </div>
+            )}
           </div>
         </div>
         {/*post Uploader section */}
@@ -389,6 +407,56 @@ const Page = () => {
           <div className="w-full flex flex-col gap-2">
             <div>Upload post</div>
             <div className="w-full space-y-2">
+              <input
+                accept="image/*, video/*"
+                multiple
+                type="file"
+                onChange={(e) => {
+                  const files = e.target.files
+                    ? Array.from(e.target.files)
+                    : [];
+
+                  const hasVideo = files.some((file) =>
+                    file.type.startsWith("video/")
+                  );
+                  const hasImage = files.some((file) =>
+                    file.type.startsWith("image/")
+                  );
+
+                  // Prevent mixed uploads
+                  if (hasVideo && hasImage) {
+                    alert("You cannot mix images and videos in one upload.");
+                    e.target.value = ""; // Reset input
+                    return;
+                  }
+
+                  // Handle video uploads (only one allowed)
+                  if (hasVideo) {
+                    if (files.length > 1) {
+                      alert("You can only upload one video.");
+                      e.target.value = ""; // Reset input
+                      return;
+                    }
+                    // setCount(1);
+                    handlePosts(e);
+                    return;
+                  }
+
+                  // Handle image uploads (up to 4 allowed)
+                  if (hasImage) {
+                    if (files.length > 4) {
+                      alert("You can upload up to 4 images.");
+                      e.target.value = ""; // Reset input
+                      return;
+                    }
+                    // setCount(2);
+                    handlePosts(e);
+                  }
+                }}
+                id="postUpload"
+                className="hidden w-full"
+              />
+
               <label
                 htmlFor="postUpload"
                 className="w-full h-[220px] cursor-pointer shadow-md rounded-lg"
@@ -403,51 +471,13 @@ const Page = () => {
                         Click to choose file
                       </span>
                     </div>
+                    {/* {isVideo} */}
                     <div className="text-sm text-[#6F7787]">
                       Your ideas will be private until you publish them.
                     </div>
                   </div>
                 </div>
               </label>
-              <input
-                accept="image/*, video/*"
-                multiple
-                type="file"
-                onChange={(e) => {
-                  const files = e.target.files
-                    ? Array.from(e.target.files)
-                    : [];
-                  const isVideo = files.some((file) =>
-                    file.type.startsWith("video/")
-                  );
-                  const isImage = files.every((file) =>
-                    file.type.startsWith("image/")
-                  );
-
-                  if (isVideo && files.length > 1) {
-                    alert("You can only upload one video.");
-                    e.target.value = ""; // Reset input
-                    return;
-                  }
-
-                  if (isImage && files.length > 4) {
-                    alert("You can upload up to 4 images.");
-                    e.target.value = ""; // Reset input
-                    return;
-                  }
-
-                  if (isVideo && !isImage) {
-                    handlePosts(e); // Allow only one video
-                  } else if (isImage && !isVideo) {
-                    handlePosts(e); // Allow up to 4 images
-                  } else {
-                    alert("You cannot mix images and videos in one upload.");
-                    e.target.value = ""; // Reset input
-                  }
-                }}
-                id="postUpload"
-                className="hidden w-full"
-              />
             </div>
 
             {/* Preview Uploaded Files */}
@@ -464,6 +494,11 @@ const Page = () => {
                     <video
                       className="rounded-lg w-full h-full object-cover bg-black"
                       controls
+                      poster={
+                        thumbnail instanceof File
+                          ? URL.createObjectURL(thumbnail)
+                          : thumbnail
+                      }
                     >
                       <source
                         src={URL.createObjectURL(file)}
@@ -493,24 +528,24 @@ const Page = () => {
                             <PiVideoFill className="text-5xl dark:text-white text-black" />
                           </div>
                           <div className="text-center mt-2 flex justify-center items-center flex-col">
-                            <div className="font-medium">Upload Video</div>
+                            <div className="font-medium">Upload Thumbnail</div>
                           </div>
                         </div>
                       </label>
 
                       {/* showing thumbnail */}
                       <input
-                        accept="video/*"
+                        accept="image/*"
                         name="image"
                         type="file"
                         id="postUpload"
-                        onChange={(e) => handleThumbnail(e, index)}
+                        onChange={(e) => setThumbnail(e.target.files?.[0])}
                         className="hidden w-full"
                       />
 
-                      {thumbnails[index] && (
+                      {thumbnail && (
                         <img
-                          src={URL.createObjectURL(thumbnails[index]!)}
+                          src={URL.createObjectURL(thumbnail)}
                           alt="Thumbnail Preview"
                           className="rounded-lg w-full h-16 mt-2"
                         />
@@ -633,6 +668,13 @@ const Page = () => {
         </div>
       </div>
     </div>
+  );
+};
+const Page = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PageContent />
+    </Suspense>
   );
 };
 

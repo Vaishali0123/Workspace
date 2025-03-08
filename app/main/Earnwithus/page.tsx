@@ -1,10 +1,48 @@
-import React from "react";
+"use client";
+import { useFetchEarnWithUsQuery } from "@/app/redux/slices/earnwithusApi";
+import { useSearchParams } from "next/navigation";
+import React, { Suspense, useEffect, useState } from "react";
 import { BsPeople } from "react-icons/bs";
 import { FiShoppingBag } from "react-icons/fi";
 import { PiClipboardText } from "react-icons/pi";
+import Load from "../Components/Load";
+interface Transaction {
+  transactionid: string;
+  amount: number;
+  status: string;
+  type: string;
+}
+const PageContent = () => {
+  const searchParams = useSearchParams();
 
-const Page = () => {
-  return (
+  const userId = searchParams.get("userId");
+  const [shouldSkip, setShouldSkip] = useState(false);
+  const { data, isLoading } = useFetchEarnWithUsQuery(userId, {
+    skip: !!shouldSkip,
+  });
+
+  useEffect(() => {
+    if (data) {
+      setShouldSkip(true);
+    }
+  }, [data]);
+  // onst earnings = await User.findById(userId)
+  // .select("earnwithus _id transactions")
+  // .populate(
+  //   "earnwithus",
+  //   "userId totalEarning customers buyers topicEarning collectionId monetization"
+  // )
+  // .populate("transactions", "transactionid amount status type")
+  // .limit(5)
+  // .lean();
+  // if (!earnings) {
+  // return res.status(304).json({
+  //   message: "User earnings not found",
+
+  //   success: false,
+  // });
+  // }
+  return !isLoading ? (
     <div className="h-full  pn:max-sm:p-2 space-y-2 w-full">
       <div className="flex gap-2 pn:max-sm:flex-col w-full justify-between items-center">
         {/* <div className="flex w-full h-full gap-2 items-center"> */}
@@ -15,7 +53,12 @@ const Page = () => {
           </div>
           <div>
             <div className="text-[#667085] font-semibold">Earnings</div>
-            <div className="text-[18px]">₹1,298</div>
+            <div className="text-[18px]">
+              ₹
+              {data?.earnwithus?.totalEarning
+                ? data?.earnwithus?.totalEarning
+                : 0}
+            </div>
           </div>
         </div>
         {/* data 2 */}
@@ -24,8 +67,10 @@ const Page = () => {
             <BsPeople className="text-purple-600 text-[25px]" />
           </div>
           <div>
-            <div className=" text-[#667085] font-semibold">Customers</div>
-            <div className="text-[20px]">298</div>
+            <div className=" text-[#667085] font-semibold">Members</div>
+            <div className="text-[20px]">
+              {data?.earnwithus?.customers ? data?.earnwithus?.customers : 0}
+            </div>
           </div>
         </div>
         {/* data 3 */}
@@ -35,7 +80,9 @@ const Page = () => {
           </div>
           <div>
             <div className=" text-[#667085] font-semibold">Customers</div>
-            <div className="text-[20px]">298</div>
+            <div className="text-[20px]">
+              {data?.earnwithus?.buyers ? data?.earnwithus?.buyers : 0}
+            </div>
           </div>
         </div>
       </div>
@@ -52,12 +99,12 @@ const Page = () => {
             <div className="text-[12px] text-gray-500 ">
               To be eligible for creating a store or uploading products, users
               must first establish a community presence by creating and
-              contributing at least one post in the community."
+              contributing at least one post in the community.&quot;
             </div>
             <div className="space-y-1 w-full">
               <div className="flex justify-between font-semibold">
-                <div className="text-[12px]">Create Your Community</div>
-                <div className="text-[12px]">10 Members</div>
+                <div className="text-[12px]">Create One Community</div>
+                <div className="text-[12px]">1 Community</div>
               </div>
               <div className="relative w-full h-[10px] bg-gray-100 rounded-full">
                 <div className="absolute top-0 left-0 h-full w-[70%] bg-blue-400 rounded-full"></div>
@@ -65,8 +112,8 @@ const Page = () => {
             </div>
             <div className="space-y-1 w-full">
               <div className="flex justify-between font-semibold">
-                <div className="text-[12px]">Create Content</div>
-                <div className="text-[12px]">10% Engagement rate</div>
+                <div className="text-[12px]">Upload atleast one post</div>
+                {/* <div className="text-[12px]">1 Post</div> */}
               </div>
               <div className="relative w-full h-[10px] bg-gray-100 rounded-full">
                 <div className="absolute top-0 left-0 h-full w-[70%] bg-blue-400 rounded-full"></div>
@@ -74,7 +121,7 @@ const Page = () => {
             </div>
             <div className="space-y-1 pt-1 flex justify-end w-full">
               <div className="flex items-center gap-1 rounded-2xl w-full justify-center px-4 py-2 text-[12px] font-medium bg-blue-600 text-white">
-                Create Product
+                Create Store
               </div>
             </div>
           </div>
@@ -89,9 +136,9 @@ const Page = () => {
               Topics
             </div>
             <div className="text-[12px] text-gray-500 ">
-              To be eligible for creating a store or uploading products, users
-              must first establish a community presence by creating and
-              contributing at least one post in the community."
+              To be eligible for creating a topic, users must first establish a
+              community presence by creating and contributing at least one post
+              in the community along engagement of 150 members
             </div>
             <div className="space-y-1 w-full">
               <div className="flex justify-between font-semibold">
@@ -130,7 +177,7 @@ const Page = () => {
             <div className="text-[12px] text-gray-500 ">
               To be eligible for creating a store or uploading products, users
               must first establish a community presence by creating and
-              contributing at least one post in the community."
+              contributing at least one post in the community.&quot;
             </div>
             <div className="space-y-1 w-full">
               <div className="flex justify-between font-semibold">
@@ -165,27 +212,48 @@ const Page = () => {
           <div className="bg-[#faf8fc] border-b gap-2 flex justify-between p-4 font-semibold text-[14px] rounded-t-xl">
             <div className="w-[20%] ">Transaction ID</div>
             <div className="w-[20%] text-center">Type</div>
-            <div className="w-[20%] text-center">Date</div>
+            {/* <div className="w-[20%] text-center">Date</div> */}
             <div className="w-[20%] text-center">Status </div>
             <div className="w-[20%] text-center">Amount </div>
-            <div className="w-[20%] text-center">Invoice</div>
+            {/* <div className="w-[20%] text-center">Invoice</div> */}
           </div>
-          <div className="flex  justify-between p-4 gap-2 text-[12px] mt-3 ">
-            <div className="w-[20%] ">ABW789456123</div>
-            <div className="w-[20%] text-center">Pay-Out</div>
-            <div className="w-[20%] text-center">08 Jan, 2022 04:39:23</div>
-            <div className="w-[20%] text-center">Success </div>
-            <div className="w-[20%] text-center text-red-500">Rs.540 </div>
-            <div className="flex w-[20%] justify-center items-center ">
-              <div className="rounded-xl border border-green-500 px-2 py-1 text-[12px] text-green-600 font-semibold">
-                Download
+          {data?.transactions?.length > 0 ? (
+            data?.transactions.map((d: Transaction, i: number) => (
+              <div
+                key={i}
+                className="flex  justify-between p-4 gap-2 text-[12px] mt-3 "
+              >
+                <div className="w-[20%] ">{d?.transactionid}</div>
+                <div className="w-[20%] text-center">{d?.type}</div>
+                {/* <div className="w-[20%] text-center">{d?.date}</div> */}
+                <div className="w-[20%] text-center">{d?.status} </div>
+                <div className="w-[20%] text-center text-red-500">
+                  ₹ {d?.amount}
+                </div>
+                {/* <div className="flex w-[20%] justify-center items-center ">
+               <div className="rounded-xl border border-green-500 px-2 py-1 text-[12px] text-green-600 font-semibold">
+                 Download
+               </div>
+             </div> */}
               </div>
+            ))
+          ) : (
+            <div className="flex  items-center justify-center p-4 gap-2 text-[14px] mt-3 ">
+              No transactions found
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
+  ) : (
+    <Load />
   );
 };
-
+const Page = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PageContent />
+    </Suspense>
+  );
+};
 export default Page;

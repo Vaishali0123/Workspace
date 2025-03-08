@@ -3,7 +3,7 @@ import toast from "react-hot-toast";
 
 export const API = process.env.NEXT_PUBLIC_API;
 
-export const errorHandler = (error: Error | any) => {
+export const errorHandler = (error: unknown) => {
   // console.log(error);
   if (axios.isAxiosError(error)) {
     if (error.response) {

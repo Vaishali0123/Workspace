@@ -1,5 +1,9 @@
 import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
 
 interface InputOTPPatternProps {
   value: string;
@@ -11,8 +15,6 @@ interface InputOTPPatternProps {
 const InputOTPPattern: React.FC<InputOTPPatternProps> = ({
   value,
   setValue,
-  size = "10px", // Default size
-  className = "",
 }) => {
   return (
     <InputOTP

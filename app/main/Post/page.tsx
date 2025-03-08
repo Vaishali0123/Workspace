@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import axios from "axios";
 import { API } from "@/app/utils/helpers";
 import toast, { Toaster } from "react-hot-toast";
-import { useAuthContext } from "@/app/Auth/Components/auth";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
@@ -25,22 +24,21 @@ interface PostData {
   post: Post[];
 }
 
-const Page: React.FC = () => {
+const PageContent: React.FC = () => {
   const searchParams = useSearchParams();
   const communityId = searchParams.get("communityId");
   const topicId = searchParams.get("topicId");
+  const userId = searchParams.get("userId");
   const [postData, setPostData] = useState<PostData[]>([]);
-  const { data } = useAuthContext();
+
   const [selectedPost, setSelectedPost] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  let userId = data?.id;
 
   useEffect(() => {
     if (communityId && topicId) {
       fetchPosts();
     }
-  }, [communityId, topicId]);
+  }, [communityId]);
 
   const fetchPosts = async () => {
     setLoading(true);
@@ -48,8 +46,8 @@ const Page: React.FC = () => {
       const response = await axios.get(
         `${API}/getpost/${communityId}/${topicId}`
       );
-      console.log(response.data.posts, "response.data.posts");
       if (response.data?.success) {
+        console.log(response.data.posts, "esponse.data.posts");
         setPostData(response.data.posts);
       }
     } catch (err) {
@@ -63,7 +61,7 @@ const Page: React.FC = () => {
     if (!postId) return; // Prevent unnecessary API calls
 
     setLoading(true);
-    setError("");
+    // setError("");
 
     try {
       const res = await axios.post(
@@ -73,9 +71,12 @@ const Page: React.FC = () => {
       setPostData((prevData) => prevData.filter((post) => post._id !== postId));
 
       toast.success(res?.data.message || "Post deleted successfully");
-    } catch (error: any) {
-      const errorMsg = error.response?.data?.message || "Failed to delete post";
-      setError(errorMsg);
+    } catch (error: unknown) {
+      let errorMsg = "Failed to delete post";
+
+      if (axios.isAxiosError(error) && error.response?.data?.message) {
+        errorMsg = error.response.data.message;
+      }
       toast.error(errorMsg);
     } finally {
       setLoading(false);
@@ -83,7 +84,6 @@ const Page: React.FC = () => {
     }
   };
 
-  console.log(selectedPost, "hi");
   return (
     <>
       <Toaster />
@@ -97,7 +97,7 @@ const Page: React.FC = () => {
           </div>
           <div className="flex justify-center text-[14px] font-medium items-center gap-2">
             <Link
-              href={`/main/CreatePost?communityId=${communityId}&topicId=${topicId}`}
+              href={`/main/CreatePost?userId=${userId}&communityId=${communityId}&topicId=${topicId}`}
               className="bg-[#4880FF] cursor-pointer font-medium text-white p-2 px-4 pp:px-7 rounded-xl"
             >
               Create Post
@@ -267,7 +267,7 @@ const Page: React.FC = () => {
                   </div>
                 </div>
               </>
-            ) : (
+            ) : postData?.length > 0 ? (
               postData?.map((d, i) =>
                 d?.post.length > 0 ? (
                   <div
@@ -363,6 +363,10 @@ const Page: React.FC = () => {
                   </div>
                 ) : null
               )
+            ) : (
+              <div className="items-center w-full pn:max-sm:space-y-2 border-b p-2 relative bg-[#ffffff] shadow-sm text-slate-500 text-center">
+                No Post Available
+              </div>
             )}
           </div>
         </div>
@@ -370,5 +374,11 @@ const Page: React.FC = () => {
     </>
   );
 };
-
+const Page = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PageContent />
+    </Suspense>
+  );
+};
 export default Page;

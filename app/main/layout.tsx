@@ -18,7 +18,7 @@ export default function MainLayout({
   return (
     <div className="h-screen w-screen flex fixed bg-slate-50">
       <div className="h-full pn:max-sm:fixed bg-white z-10 md:w-[350px]">
-        <MemorizedNav path={path} userId={data?.id} />
+        <MemorizedNav path={path} />
       </div>
       <div className="h-full w-full bg-slate-50 sm:space-y-2 sm:p-2">
         <div

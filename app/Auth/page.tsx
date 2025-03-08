@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import w1 from "../assets/image/w1.png";
 import w2 from "../assets/image/w2.png";
 import w3 from "../assets/image/w3.png";
-import Image from "next/image";
+import Image, { StaticImageData } from "next/image";
 import Link from "next/link";
 import { API, errorHandler } from "../utils/helpers";
 import axios from "axios";
@@ -15,22 +15,24 @@ import {
   verifyEmailOTP,
   verifyOTP,
 } from "../utils/otpUtils";
-import { useAuthContext } from "./Components/auth";
+import { useAuthContext, UserData } from "./Components/auth";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import EmailInput from "./Components/EmailInput";
 import EmailOtpComponent from "./Components/EmailOtpComponent";
 import MobileInput from "./Components/MobileInput";
 import OtpComponent from "./Components/OtpComponent";
-
+import Grovyo from "../assets/image/Logo.png";
+interface Slide {
+  img: StaticImageData;
+  msg: string;
+}
 const Page = () => {
   const [showOtp, setShowOtp] = useState<boolean>(false);
   const [email, setEmail] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [otp, setOtp] = useState<string>("");
   const [change, setChange] = React.useState<number>(1);
-  const [showsOtp, setShowsOtp] = useState<boolean>(false);
-  const [otpd, setOtpd] = useState<string>("");
   const [phoneNumber, setPhoneNumber] = useState<string>("");
   const { setAuth, setData } = useAuthContext();
   const [activeSlide, setActiveSlide] = useState<number>(0);
@@ -62,7 +64,7 @@ const Page = () => {
     }
   };
 
-  const cookieSetter = (data: any, token: string) => {
+  const cookieSetter = (data: UserData, token: string) => {
     try {
       const expirationDate = new Date();
       expirationDate.setDate(expirationDate.getDate() + 15);
@@ -210,10 +212,6 @@ const Page = () => {
       setLoading(false);
     }
   };
-  interface Slide {
-    img: any;
-    msg: string;
-  }
 
   const slides: Slide[] = [
     { img: w1, msg: `Your Hub for Building, Engaging, and Earning` },
@@ -278,13 +276,15 @@ const Page = () => {
         <div className=" inset-0 w-full z-50 h-screen flex justify-center items-center ">
           <div className="w-[50%] h-[85%] flex flex-col p-2 space-y-3 items-center">
             {/* web Qr  */}
-            <div className="w-[160px] h-[160px] border-dotted border-2 border-[#d9d9d9] bg-[#e6a6a6] rounded-3xl"></div>
-            {/* text  */}
-            <div className="text-xl font-semibold text-[#2c2c2c]">
-              Sign in with QR code
+            <div className="w-[120px] h-[120px] border-dotted border-2 border-[#d9d9d9] bg-[#000] rounded-3xl">
+              <Image alt="img" src={Grovyo} className="h-[100%] w-[100%]" />
             </div>
+            {/* text  */}
+            {/* <div className="text-xl font-semibold text-[#2c2c2c]">
+              Sign in with QR code
+            </div> */}
             <div className="flex flex-col gap-3 justify-center items-center">
-              <div className="max-w-[70%] text-sm text-[#9095A0] text-center">
+              {/* <div className="max-w-[70%] text-sm text-[#9095A0] text-center">
                 Open the{" "}
                 <a
                   className="text-blue-600 cursor-pointer"
@@ -294,13 +294,13 @@ const Page = () => {
                   Grovyo
                 </a>{" "}
                 app's camera to scan this code and log in instantly.
-              </div>
+              </div> */}
             </div>
             {/* web Or Sign in with bar */}
             <div className="flex pn:max-sm:hidden items-center justify-center w-full">
               <hr className="flex-grow border-t border-dashed text-[#3b3b3b] border-[#9095A0] " />
               <span className="px-3 text-[12px] font-medium text-[#9095A0] bg-transparent ">
-                or Sign in with
+                Sign in with
               </span>
               <hr className="flex-grow border-t border-dashed text-[#9095A0] border-[#9095A0]" />
             </div>
@@ -358,9 +358,9 @@ const Page = () => {
                 />
               ) : (
                 <MobileInput
-                  sendPhoneOtp={loginWithPhoneNumber}
+                  // sendPhoneOtp={loginWithPhoneNumber}
                   number={phoneNumber}
-                  // sendPhoneOtp={sendPhoneOtp}
+                  sendPhoneOtp={sendPhoneOtp}
                   loading={loading}
                   setPhoneNumber={setPhoneNumber}
                 />

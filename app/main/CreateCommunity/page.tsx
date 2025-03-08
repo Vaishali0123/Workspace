@@ -1,11 +1,7 @@
 "use client";
-import { setCommunity } from "@/app/redux/slices/communitySlice";
-import { RootState } from "@/app/redux/store";
 import { API } from "@/app/utils/helpers";
 import axios from "axios";
-import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import { useDispatch } from "react-redux";
+import React, { useState } from "react";
 import { useAuthContext } from "@/app/Auth/Components/auth";
 import { HiOutlineLockClosed } from "react-icons/hi";
 import toast from "react-hot-toast";
@@ -20,13 +16,13 @@ const Page = () => {
   const [selectTopic, setSelectTopic] = useState<string>("");
   const [topicType, setTopicType] = useState<string>("Free");
   const [communityName, setCommunityName] = useState<string>("");
-  const [comId, setComId] = useState("");
+  const comId = "";
   const [communityDescription, setCommunityDescription] = useState<string>("");
   const [communityCategory, setCommunityCategory] = useState<string>("");
   const [communityType, setCommunityType] = useState<string>("public");
   const [communityImage, setCommunityImage] = useState<File | null>(null);
-  const [dp, setDp] = useState<File | null>(null);
 
+  const [loading, setLoading] = useState(false);
   const { data } = useAuthContext();
   const userId = data?.id;
   const communities = [
@@ -48,23 +44,25 @@ const Page = () => {
   ];
 
   const router = useRouter();
-
   const createCommunity = async () => {
+    setLoading(true);
     try {
       const formData = new FormData();
       formData.append("communityName", communityName);
       formData.append("category", communityCategory);
       formData.append("desc", communityDescription);
       formData.append("type", communityType);
-      formData.append("dp", communityImage);
-      console.log("FormData:", formData);
+      if (communityImage) {
+        formData.append("dp", communityImage);
+      }
+
       const res = await axios.post(
         `${API}/createcommunity/${data?.id}`,
         formData
       );
       if (res.status === 200) {
         toast.success("Successfully Community Created");
-        router.push("/main/Community");
+        router.push(`/main/Community?userId=${userId}`);
       }
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -75,12 +73,13 @@ const Page = () => {
       } else {
         console.error("Error creating community:", error);
       }
-      toast.error("Failed to create community");
+      toast.error("Failed to create community, please try again later.");
     }
+    setLoading(false);
   };
   const Topices = [{ selectTopic: "Post" }, { selectTopic: "All" }];
 
-  const [comImage, setComImage] = useState<File | null>(null);
+  // const [comImage, setComImage] = useState<File | null>(null);
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -88,8 +87,8 @@ const Page = () => {
         toast.error("Only image files are allowed!");
         return;
       }
-      setDp(file);
-      setComImage(file);
+
+      // setComImage(file);
       setCommunityImage(file);
     }
   };
@@ -132,48 +131,60 @@ const Page = () => {
             >
               Discard
             </Link>
-            <div className="flex px-4 p-2 text-[14px] bg-blue-600 text-white items-center justify-center rounded-xl">
-              <div onClick={createCommunity}> Create</div>
-            </div>
+            {loading ? (
+              <div className="flex px-4 p-2 text-[14px] bg-blue-600 text-white items-center justify-center rounded-xl">
+                <div> Creating...</div>
+              </div>
+            ) : (
+              <div
+                onClick={createCommunity}
+                className="flex px-4 p-2 text-[14px] bg-blue-600 text-white items-center justify-center rounded-xl"
+              >
+                <div> Create</div>
+              </div>
+            )}
           </div>
         </div>
       </div>
-      <div className="h-[calc(98%-60px)] bg-white border rounded-2xl overflow-hidden relative">
+      <div className="h-[calc(98%-60px)] border  rounded-2xl overflow-hidden relative">
         {/* header  */}
-        <div
-          className={`${
-            open === true
-              ? " absolute h-full w-full flex items-center justify-center bg-[#1717170c]"
-              : "hidden"
-          }`}
-        >
-          <div className="bg-white p-4 border  max-w-[300px] flex-wrap flex gap-2 rounded-2xl">
-            {communities.map((item, index) => (
-              <div
-                onClick={() => {
-                  setCommunityCategory(item.category);
-                  setOpen(false);
-                }}
-                key={index}
-                className={`text-[14px] p-2 px-4 rounded-2xl border hover:bg-slate-50 select-none cursor-pointer ${
-                  communityCategory === item.category
-                    ? "bg-[#f1f4f9] text-[#667085]"
-                    : ""
-                }`}
-              >
-                {item.category}
-              </div>
-            ))}
+
+        {open ? (
+          <div
+            onClick={() => {
+              setOpen(false);
+            }}
+            className=" absolute h-full w-full flex items-center z-20 justify-center bg-[#1717170c]"
+          >
+            <div className="bg-white p-4 border  max-w-[300px] flex-wrap flex gap-2 rounded-2xl">
+              {communities.map((item, index) => (
+                <div
+                  onClick={() => {
+                    setCommunityCategory(item.category);
+                    setOpen(!open);
+                  }}
+                  key={index}
+                  className={`text-[14px] p-2 px-4 rounded-2xl border hover:bg-slate-50 select-none cursor-pointer ${
+                    communityCategory === item.category
+                      ? "bg-[#f1f4f9] text-[#667085]"
+                      : ""
+                  }`}
+                >
+                  {item.category}
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-        <div className="p-4 ">
-          <div className="h-[100px] flex w-full items-center gap-2 justify-center">
-            <div className="h-[80px] w-[80px] border rounded-3xl">
+        ) : null}
+
+        <div className="p-4  ">
+          <div className="py-2  flex-col flex w-full items-center gap-2 justify-center font-semibold text-[12px]">
+            <div className="h-[80px] w-[80px] border bg-white rounded-[32px] ">
               {communityImage instanceof File && (
                 <img
-                  src={URL.createObjectURL(dp)}
+                  src={URL.createObjectURL(communityImage)}
                   alt="Community Logo"
-                  className="h-[80px] w-[80px] border rounded-3xl"
+                  className="h-[80px] w-[80px] object-cover  border rounded-3xl"
                 />
               )}
             </div>
@@ -183,9 +194,9 @@ const Page = () => {
               type="file"
               accept="image/*"
               onChange={handleImageChange}
-              className="p-2 px-4 border rounded-3xl text-[14px]"
+              className="p-2  flex justify-center items-center border rounded-3xl text-[14px] font-normal text-center "
             />
-            Upload image
+            Upload Community Pic
           </div>
 
           <div className=" h-[calc(100%-150px)] flex">
@@ -224,11 +235,11 @@ const Page = () => {
                 />
               </div>
               {/* cat  */}
-              <div className="w-full text-[14px] space-y-1 text-[#667085]">
+              <div className="w-full text-[14px]  space-y-1 text-[#667085]">
                 <div className="text-[14px] text-[#667085]">Category</div>
                 <div
-                  onClick={() => setOpen(true)}
-                  className="p-2 px-4 w-fit border rounded-lg text-center"
+                  onClick={() => setOpen(!open)}
+                  className="p-2 px-4 w-fit z-20 border bg-white rounded-lg text-center"
                 >
                   {communityCategory ? communityCategory : "Select Category"}
                 </div>
@@ -304,7 +315,7 @@ const Page = () => {
                     </div>
 
                     <div
-                      onClick={() => setOpen(!open)}
+                      // onClick={() => setOpen(!open)}
                       className="p-2 border px-4 rounded-xl bg-blue-600 flex items-center gap-2 text-white text-center"
                     >
                       {comId === "" ? <HiOutlineLockClosed /> : "+"} Add
@@ -312,18 +323,18 @@ const Page = () => {
                   </div>
                 </div>
                 {comId === "" ? (
-                  <div className="p-2 w-[60%] text-[14px] text-[#667085] border space-y-2 rounded-xl">
+                  <div className="p-2 w-[60%] text-[14px] bg-white text-[#667085] border space-y-2 rounded-xl">
                     <div>
-                      To from a topic on this community you have get 150 members
-                      on it
+                      To form a new topic in this community, you have to get
+                      atleast 150 members
                     </div>
-                    <div className="space-y-1 w-full">
+                    <div className="space-y-1 w-full ">
                       <div className="flex justify-between text-[#666] font-semibold">
-                        <div className="text-[12px]">Memder</div>
-                        <div className="text-[12px]">0/150</div>
+                        <div className="text-[12px]">Members</div>
+                        <div className="text-[12px]">150/150</div>
                       </div>
                       <div className="relative w-full h-[10px] bg-gray-100 rounded-full">
-                        <div className="absolute top-0 left-0 h-full w-[70%] bg-blue-400 rounded-full"></div>
+                        <div className="absolute top-0 left-0  h-full w-[100%] bg-blue-400 rounded-full"></div>
                       </div>
                     </div>
                   </div>

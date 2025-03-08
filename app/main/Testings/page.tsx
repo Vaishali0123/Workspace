@@ -2,8 +2,9 @@
 
 import { useAuthContext } from "@/app/Auth/Components/auth";
 import { API } from "@/app/utils/helpers";
-import axios from "axios";
+import { axios } from "../../utils/comimports";
 import React, { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
 interface StoreDetails {
   houseNo: string;
@@ -46,10 +47,12 @@ const Page = () => {
       try {
         const response = await axios.get(`${API}/requests/${userId}`);
         setRequests(response.data.data);
-      } catch (err: any) {
-        setError(
-          err.response?.data?.message || "Failed to fetch store requests"
-        );
+      } catch (err: unknown) {
+        let errmsg = "Failed to fetch store requests";
+        if (axios.isAxiosError(err) && err.response?.data?.message) {
+          errmsg = err.response?.data?.message;
+        }
+        toast.error(errmsg);
       } finally {
         setLoading(false);
       }
@@ -79,8 +82,12 @@ const Page = () => {
 
         setMessage(response.data.message);
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to approve the request");
+    } catch (err: unknown) {
+      let errmsg = "Failed to fetch store requests";
+      if (axios.isAxiosError(err) && err.response?.data?.message) {
+        errmsg = err.response?.data?.message;
+      }
+      toast.error(errmsg);
     } finally {
       setApproving(null);
     }

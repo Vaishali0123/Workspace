@@ -1,9 +1,7 @@
 "use client";
-import { useEffect, useState } from "react";
-import { getData } from "../utils/Useful";
-import axios from "axios";
-import { useRouter } from "next/navigation";
-import toast, { Toaster } from "react-hot-toast";
+import { Suspense, useEffect, useState } from "react";
+
+import { Toaster } from "react-hot-toast";
 // import Cookies from "js-cookie";
 import dynamic from "next/dynamic";
 const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
@@ -15,13 +13,12 @@ import { MdOutlineArrowDropDown, MdVerified } from "react-icons/md";
 import Hover from "../data/Hover";
 import { IoInformationCircleOutline } from "react-icons/io5";
 import { BsToggleOff, BsToggleOn } from "react-icons/bs";
-import Image from "next/image";
 // import logo from "../assets/Logo.png";
 import { RxCross2 } from "react-icons/rx";
 
-const Page = () => {
+const PageContent = () => {
   const [monthprice, setMonthPrice] = useState(true);
-  const { id } = getData();
+  // const { id } = getData();
   const [toggle, setToggle] = useState({
     t1: false,
     t2: false,
@@ -58,9 +55,9 @@ const Page = () => {
     pro: 15,
     premium: 25,
   });
-  const [memberPop, setMemberPop] = useState(false);
+  const memberPop = false;
   const [isdelivery, setIsDelivery] = useState(false);
-  const router = useRouter();
+
   // interface ToggleState {
   //   t1: boolean;
   //   t2: boolean;
@@ -129,41 +126,41 @@ const Page = () => {
   };
 
   //   phonepe
-  const buyMembership = async (
-    price: number,
-    mId: string,
-    dm: number,
-    tagging: number,
-    deliverylimitcity: number,
-    deliverylimitcountry: number
-  ) => {
-    const amount = price + Math.round(price * 0.18);
-    // const amounttosend = `₹${1}`;
-    const amounttosend = `₹${amount}`;
+  // const buyMembership = async (
+  //   price: number,
+  //   mId: string,
+  //   dm: number,
+  //   tagging: number,
+  //   deliverylimitcity: number,
+  //   deliverylimitcountry: number
+  // ) => {
+  //   const amount = price + Math.round(price * 0.18);
+  //   // const amounttosend = `₹${1}`;
+  //   const amounttosend = `₹${amount}`;
 
-    try {
-      const res = await axios.post(
-        `${process.env.NEXT_PUBLIC_API}/membershipbuy/${id}/${mId}`,
+  //   try {
+  //     const res = await axios.post(
+  //       `${process.env.NEXT_PUBLIC_API}/membershipbuy/${id}/${mId}`,
 
-        {
-          amount: amounttosend,
-          dm,
-          tagging,
-          deliverylimitcity,
-          deliverylimitcountry,
-          period: monthprice ? "month" : "year",
-        }
-      );
+  //       {
+  //         amount: amounttosend,
+  //         dm,
+  //         tagging,
+  //         deliverylimitcity,
+  //         deliverylimitcountry,
+  //         period: monthprice ? "month" : "year",
+  //       }
+  //     );
 
-      if (res.data.success) {
-        router.push(res.data?.url);
-      } else {
-        toast.error(res.data.message);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  //     if (res.data.success) {
+  //       router.push(res.data?.url);
+  //     } else {
+  //       toast.error(res.data.message);
+  //     }
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // };
 
   useEffect(() => {
     const isCreatorl = localStorage.getItem("isCreator");
@@ -301,8 +298,8 @@ const Page = () => {
         {popup && (
           <div className="w-full animate-popup bg-[#111827] relative py-4 justify-center items-center text-sm px-3 sm:px-6 flex">
             <div className="font-medium text-xs sm:text-sm">
-              Don't miss out! Get 500 Rs in FREE Grovyo Ads Credit to jumpstart
-              your campaigns.
+              Don&apos;t miss out! Get 500 Rs in FREE Grovyo Ads Credit to
+              jumpstart your campaigns.
             </div>
             <div className="sm:absolute sm:right-12 top-0 flex items-center h-full">
               <RxCross2 className="text-xl" onClick={() => setPopup(false)} />
@@ -1175,19 +1172,19 @@ const Page = () => {
                           </div>
                           <div className="w-full pn:max-sm:max-w-[200px] flex justify-center items-center mt-3 ">
                             <button
-                              onClick={() =>
-                                buyMembership(
-                                  monthprice ? plus ?? 0 : plusy ?? 0,
-                                  process.env.NEXT_PUBLIC_PLUS ?? "",
-                                  10,
-                                  2,
-                                  d.plus,
-                                  dc.plus
-                                )
-                              }
+                              // onClick={() =>
+                              //   buyMembership(
+                              //     monthprice ? plus ?? 0 : plusy ?? 0,
+                              //     process.env.NEXT_PUBLIC_PLUS ?? "",
+                              //     10,
+                              //     2,
+                              //     d.plus,
+                              //     dc.plus
+                              //   )
+                              // }
                               className="p-2 px-4 text-center  hover:text-white hover:bg-[#0066FF] font-semibold border text-[#0066FF] border-[#0066FF] rounded-full w-full"
                             >
-                              Let's Begin
+                              Let&apos;s Begin
                             </button>
                           </div>
                         </div>
@@ -1763,19 +1760,19 @@ const Page = () => {
                           </div>
                           <div className="w-full pn:max-sm:max-w-[200px] flex justify-center items-center mt-3 ">
                             <button
-                              onClick={() =>
-                                buyMembership(
-                                  monthprice ? pro ?? 0 : proy ?? 0,
-                                  process.env.NEXT_PUBLIC_PRO ?? "",
-                                  27,
-                                  5,
-                                  d.pro,
-                                  dc.pro
-                                )
-                              }
+                              // onClick={() =>
+                              //   buyMembership(
+                              //     monthprice ? pro ?? 0 : proy ?? 0,
+                              //     process.env.NEXT_PUBLIC_PRO ?? "",
+                              //     27,
+                              //     5,
+                              //     d.pro,
+                              //     dc.pro
+                              //   )
+                              // }
                               className="p-2 px-4 text-center hover:text-white hover:bg-[#0066FF] font-semibold border text-[#0066FF] border-[#0066FF] rounded-full w-full"
                             >
-                              Let's Begin
+                              Let&apos;s Begin
                             </button>
                           </div>
                         </div>
@@ -2361,19 +2358,19 @@ const Page = () => {
                           </div>
                           <div className="w-full pn:max-sm:max-w-[200px] flex justify-center items-center mt-3 ">
                             <button
-                              onClick={() =>
-                                buyMembership(
-                                  monthprice ? premium ?? 0 : premiumy ?? 0,
-                                  process.env.NEXT_PUBLIC_PREMIUM ?? "",
-                                  55,
-                                  15,
-                                  d.premium,
-                                  dc.premium
-                                )
-                              }
+                              // onClick={() =>
+                              //   buyMembership(
+                              //     monthprice ? premium ?? 0 : premiumy ?? 0,
+                              //     process.env.NEXT_PUBLIC_PREMIUM ?? "",
+                              //     55,
+                              //     15,
+                              //     d.premium,
+                              //     dc.premium
+                              //   )
+                              // }
                               className="p-2 px-4 text-center hover:text-white hover:bg-[#0066FF] font-semibold border text-[#0066FF] border-[#0066FF] rounded-full w-full"
                             >
-                              Let's Begin
+                              Let&apos;s Begin
                             </button>
                           </div>
                         </div>
@@ -2970,7 +2967,7 @@ const Page = () => {
                     {toggle.t1 && (
                       <div className="text-[#CCCCCC]">
                         A membership unlocks a suite of features to elevate your
-                        social commerce experience. You'll gain access to
+                        social commerce experience. You&apos;ll gain access to
                         exclusive communities, build your own branded prosite,
                         manage your store with ease, and enjoy premium delivery
                         options. Plus, a membership badge sets you apart as a
@@ -3030,7 +3027,7 @@ const Page = () => {
                   className="flex flex-col gap-2"
                 >
                   <div className="text-lg">
-                    What's the benefit of the membership badge?
+                    What&apos;s the benefit of the membership badge?
                   </div>
                   <div
                     className={`transition-opacity duration-500 ${
@@ -3109,10 +3106,10 @@ const Page = () => {
                   >
                     {toggle.t5 && (
                       <div className="text-[#CCCCCC]">
-                        You'll have access to advanced store management tools,
-                        allowing you to create promotions, track inventory, and
-                        analyze sales data. Plus, members enjoy exclusive
-                        discounts on transaction fees.
+                        You&apos;ll have access to advanced store management
+                        tools, allowing you to create promotions, track
+                        inventory, and analyze sales data. Plus, members enjoy
+                        exclusive discounts on transaction fees.
                       </div>
                     )}
                   </div>
@@ -3135,7 +3132,7 @@ const Page = () => {
                   onClick={() => setToggle({ ...toggle, t6: !toggle.t6 })}
                   className="flex flex-col gap-2"
                 >
-                  <div className="text-lg">What's a prosite?</div>
+                  <div className="text-lg">What&apos;s a prosite?</div>
                   <div
                     className={`transition-opacity duration-500 ${
                       toggle.t6 ? "opacity-100" : "opacity-0"
@@ -3225,5 +3222,11 @@ const Page = () => {
     </>
   );
 };
-
+const Page = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PageContent />
+    </Suspense>
+  );
+};
 export default Page;

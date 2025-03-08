@@ -7,6 +7,21 @@ import axios from "axios";
 import { API } from "@/app/utils/helpers";
 import { useAuthContext } from "@/app/Auth/Components/auth";
 
+interface Orders {
+  orderId: string;
+  data: orderdata[];
+  createdAt: string;
+}
+interface orderdata {
+  totalprice: string;
+  currentStatus: string;
+
+  productId: {
+    name: string;
+    images: [{ content: string }];
+  };
+}
+
 const Page = () => {
   const { data } = useAuthContext();
   const userId = data?.id;
@@ -21,7 +36,9 @@ const Page = () => {
   };
 
   useEffect(() => {
-    getorder();
+    if (userId) {
+      getorder();
+    }
   }, [userId]);
   return (
     <div className="w-full space-y-[10px]  pn:max-sm:p-2 h-full">
@@ -88,7 +105,7 @@ const Page = () => {
 
         {/* Order Details */}
         <div className=" h-[calc(100%-1000px)] overflow-auto rounded-b-xl  p-2 text-[12px]">
-          {orderData?.map((item: any, index: any) => (
+          {orderData?.map((item: Orders, index: number) => (
             <div key={index} className="flex border-b py-2 items-center">
               <div className="w-[15%] ">#{item?.orderId}</div>
               <div className="w-[25%] flex items-center gap-2 px-2">

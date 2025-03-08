@@ -1,78 +1,94 @@
 "use client";
-import React, { use, useState } from "react";
+import React, { Suspense, useCallback, useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { PiClipboardText } from "react-icons/pi";
 import { BsPeople } from "react-icons/bs";
 import { FiShoppingBag } from "react-icons/fi";
-import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "../../redux/store"; // Adjust the import path as necessary
+import { useDispatch } from "react-redux";
 import axios from "axios";
 import { API } from "@/app/utils/helpers";
 import { useEffect } from "react";
 import Link from "next/link";
-import { useAuthContext } from "@/app/Auth/Components/auth";
 import { IoStorefrontOutline } from "react-icons/io5";
 import { RiLoader2Line } from "react-icons/ri";
 import { FaAsterisk, FaPlus } from "react-icons/fa6";
 import toast from "react-hot-toast";
 import { setIfCode } from "@/app/redux/slices/userSlice";
 import { LuCircleCheckBig } from "react-icons/lu";
-// import { useAuthContext } from "@/app/components/auth";
-const useLocation = () => {
-  const [location, setLocation] = useState<{
-    latitude: number;
-    longitude: number;
-  } | null>(null);
-  const [locationError, setLocationError] = useState<string | null>(null);
+import { useSearchParams } from "next/navigation";
+import { useFetchEarnWithUsQuery } from "@/app/redux/slices/earnwithusApi";
 
-  useEffect(() => {
-    if (!navigator.geolocation) {
-      setLocationError("Geolocation is not supported by your browser");
-      return;
-    }
+interface Products {
+  name: string;
+  orderscount: number;
+  quantity: number;
+  price: number;
+  images: images[];
+}
+interface images {
+  content: string;
+}
+interface Collection {
+  collectionName: string;
+  _id: string;
+  products: Products[];
+}
+// const useLocation = () => {
+//   const [location, setLocation] = useState<{
+//     latitude: number;
+//     longitude: number;
+//   } | null>(null);
+//   const [locationError, setLocationError] = useState<string | null>(null);
 
-    navigator.permissions
-      .query({ name: "geolocation" })
-      .then((permissionStatus) => {
-        if (permissionStatus.state === "granted") {
-          getLocation();
-        } else if (permissionStatus.state === "prompt") {
-          navigator.geolocation.getCurrentPosition(
-            (position) => {
-              setLocation({
-                latitude: position.coords.latitude,
-                longitude: position.coords.longitude,
-              });
-            },
-            (error) => {
-              setLocationError(error.message);
-            }
-          );
-        } else {
-          setLocationError("Location permission denied");
-        }
-      })
-      .catch((err) => setLocationError(err.message));
-  }, []);
+//   useEffect(() => {
+//     if (!navigator.geolocation) {
+//       setLocationError("Geolocation is not supported by your browser");
+//       return;
+//     }
 
-  const getLocation = () => {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setLocation({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        });
-      },
-      (error) => {
-        setLocationError(error.message);
-      }
-    );
-  };
+//     navigator.permissions
+//       .query({ name: "geolocation" })
+//       .then((permissionStatus) => {
+//         if (permissionStatus.state === "granted") {
+//           getLocation();
+//         } else if (permissionStatus.state === "prompt") {
+//           navigator.geolocation.getCurrentPosition(
+//             (position) => {
+//               setLocation({
+//                 latitude: position.coords.latitude,
+//                 longitude: position.coords.longitude,
+//               });
+//             },
+//             (error) => {
+//               setLocationError(error.message);
+//             }
+//           );
+//         } else {
+//           setLocationError("Location permission denied");
+//         }
+//       })
+//       .catch((err) => setLocationError(err.message));
+//   }, []);
 
-  return { location, locationError };
-};
+//   const getLocation = () => {
+//     navigator.geolocation.getCurrentPosition(
+//       (position) => {
+//         setLocation({
+//           latitude: position.coords.latitude,
+//           longitude: position.coords.longitude,
+//         });
+//       },
+//       (error) => {
+//         setLocationError(error.message);
+//       }
+//     );
+//   };
 
-const Page = () => {
+//   return { location, locationError };
+// };
+
+const PageContent = () => {
+  const [collectionres, setCollectionres] = useState(false);
   const [pop, setPop] = useState(false);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -84,16 +100,29 @@ const Page = () => {
   const [city, setCity] = useState("");
   const [docs, setDocs] = useState("");
   const [docimage, setDocimage] = useState<File | null>(null);
-  const { location, locationError } = useLocation();
   const [store, setStore] = useState({ d2: "", d3: "", d4: "" });
   const [collectionName, setCollectionName] = useState("");
   const [select, setSelect] = useState(false);
   const [category, setCategory] = useState("");
-  const { data } = useAuthContext();
-  const userId = data?.id;
-  const isStoreVerified = data?.isStoreVerified;
+
   const dispatch = useDispatch();
   const [collpopup, setCollpopup] = useState(false);
+  const [collectionData, setCollectionData] = useState([]);
+  const searchParams = useSearchParams();
+
+  const userId = searchParams.get("userId");
+  const isStoreVerified = searchParams.get("isStoreVerified");
+  const storeid = searchParams.get("storeid");
+  const [shouldSkip, setShouldSkip] = useState(false);
+  const { data, isLoading } = useFetchEarnWithUsQuery(userId, {
+    skip: !!shouldSkip,
+  });
+
+  useEffect(() => {
+    if (data) {
+      setShouldSkip(true);
+    }
+  }, [data]);
   const Collection = [
     { category: "Tech" },
     { category: "Health" },
@@ -155,7 +184,7 @@ const Page = () => {
       formData.append("state", state);
       formData.append("city", city);
       formData.append("docs", docs);
-      formData.append("storepic", docimage);
+      formData.append("storepic", docimage || "");
 
       const response = await axios.post(
         `${API}/registerstore/${data?.id}`,
@@ -177,13 +206,14 @@ const Page = () => {
   // create collection
 
   const createCollection = async () => {
+    setCollectionres(true);
     try {
       const formData = new FormData();
       formData.append("collectionName", collectionName);
       formData.append("category", category);
       console.log(userId, data?.storeid);
       const response = await axios.post(
-        `${API}/createcollection/${userId}/${data?.storeid}`,
+        `${API}/createcollection/${userId}/${storeid}`,
         {
           collectionName: collectionName,
           category: category,
@@ -193,41 +223,45 @@ const Page = () => {
       if (response.data.success) {
         toast.success("Successfully created collection");
         setCollpopup(false);
+        setCollectionData(response.data.collection);
       }
     } catch (error) {
       console.error(error);
     }
+    setCollectionres(false);
   };
   // Get collection
-  // const getCollection = async () => {
-  //   try {
-  //     const response = await axios.get(`${API}/getcollection/${userId}`);
-  //     console.log(response.data, "ljigygyhn");
-  //     if (response.data.success) {
-  //       setCollectionData(response?.data);
-  //     }
-  //   } catch (error) {
-  //     console.error(error);
-  //   }
+  const getCollection = useCallback(async () => {
+    try {
+      const response = await axios.get(`${API}/getCollection/${userId}`);
 
-  //   console.log(collectionData, "collectionData");
-  // };
-  // useEffect(() => {
-  //   getCollection();
-  // }, [userId]);
+      if (response.data.success) {
+        console.log(response?.data?.data, "response?.data?.data");
+        setCollectionData(response?.data?.data?.collections?.collectionId);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }, [userId]);
+  useEffect(() => {
+    if (userId && isStoreVerified && collectionData?.length === 0) {
+      getCollection();
+    }
+  }, [userId]);
+
   return (
     <>
-      {isStoreVerified === false ? (
+      {!isStoreVerified ? (
         <div className="w-full h-full rounded-2xl overflow-hidden relative">
           {/* register store  */}
-          {!setIfCode === false ? (
+          {!setIfCode ? (
             <>
               <div className=" w-full  rounded-2xl space-y-2 flex items-center flex-col justify-center h-[100%] p-2">
                 <div className="border rounded-2xl space-y-2  gap-2 p-2 w-[40%] bg-white">
                   <div className="rounded-xl bg-red-50 p-4 flex gap-2 items-end">
                     <IoStorefrontOutline className="text-red-600 text-[25px]" />
                     <div className="text-[14px] text-[#667085]">
-                      Ready to setup your store! Here's Your 3-Step Guide
+                      Ready to setup your store! Here&apos;s Your 3-Step Guide
                     </div>
                   </div>
                   <div className="text-[#667085] space-y-2 font-semibold ">
@@ -235,7 +269,7 @@ const Page = () => {
                       To be eligible for creating a store or uploading products,
                       users must first establish a community presence by
                       creating and contributing at least one post in the
-                      community."
+                      community.
                     </div>
                     <div className="space-y-1 w-full">
                       <div className="flex justify-between font-semibold">
@@ -452,12 +486,12 @@ const Page = () => {
             <>
               <div className=" w-full rounded-2xl space-y-2 flex items-center flex-col justify-center h-[100%] p-2">
                 <div className="border rounded-2xl space-y-2  gap-2 p-2 w-[40%] bg-white">
-                  <div className="rounded-xl bg-red-50 p-4 flex gap-2 items-end">
+                  <div className="rounded-xl bg-red-50 p-4 flex gap-2 jcenter items-center">
                     <IoStorefrontOutline className="text-red-600 text-[25px]" />
                   </div>
                   <div className="text-[#667085] space-y-2 font-semibold ">
                     <div className="text-[12px] text-gray-500 ">
-                      Please with for 24 hours to verify your store
+                      Please give us 24 hours to verify your store.
                     </div>
                   </div>
                 </div>
@@ -466,8 +500,8 @@ const Page = () => {
           )}
         </div>
       ) : (
-        // if store is registered
-        <div className="w-full h-full rounded-2xl overflow-hidden relative">
+        // if store is registered and verified
+        <div className="w-full h-full relative">
           {/* top models  */}
           <div className="flex gap-2 pn:max-sm:flex-col sm:h-[130px] w-full justify-between items-center">
             <div className="flex w-full h-full gap-2 items-center">
@@ -478,7 +512,16 @@ const Page = () => {
                 </div>
                 <div>
                   <div className="text-[#667085] font-semibold">Earnings</div>
-                  <div className="text-[18px]">₹1,298</div>
+                  {isLoading ? (
+                    <div className="text-[18px]">...</div>
+                  ) : (
+                    <div className="text-[18px]">
+                      ₹
+                      {data?.earnwithus?.totalEarning
+                        ? data?.earnwithus?.totalEarning
+                        : 0}
+                    </div>
+                  )}
                 </div>
               </div>
               {/* data 2 */}
@@ -488,7 +531,12 @@ const Page = () => {
                 </div>
                 <div>
                   <div className=" text-[#667085] font-semibold">Customers</div>
-                  <div className="text-[20px]">298</div>
+                  <div className="text-[20px]">
+                    {" "}
+                    {data?.earnwithus?.customers
+                      ? data?.earnwithus?.customers
+                      : 0}
+                  </div>
                 </div>
               </div>
             </div>
@@ -513,160 +561,207 @@ const Page = () => {
               </div>
             </div>
           </div>
-          {/* pop up for collection */}
-          {collpopup ? (
-            <div className="h-full w-full bg-[#1717170d] backdrop-blur-sm absolute flex justify-center items-center top-0">
-              <div className="p-4 rounded-xl space-y-2 border bg-white">
-                <div className="w-[300px]">
-                  <div className="flex  items-center gap-2">
-                    <div className="rounded-full bg-green-100 w-10 h-10 flex justify-center items-center">
-                      <LuCircleCheckBig className="text-green-600 text-[25px]" />
+          {/* pop up for creating collection */}
+          <div className="h-[calc(100%-130px)] pt-2 overflow-auto">
+            {collpopup ? (
+              <div className="h-full w-full bg-[#1717170d] backdrop-blur-sm absolute flex justify-center items-center top-0">
+                <div className="p-4 rounded-xl space-y-2 border bg-white">
+                  <div className="w-[300px]">
+                    <div className="flex  items-center gap-2">
+                      <div className="rounded-full bg-green-100 w-10 h-10 flex justify-center items-center">
+                        <LuCircleCheckBig className="text-green-600 text-[25px]" />
+                      </div>
+                      <div className="text-[20px] font-semibold ">
+                        Collection
+                      </div>
                     </div>
-                    <div className="text-[20px] font-semibold ">Collection</div>
-                  </div>
-                  <div className="text-[12px] mt-2">
-                    Group your products into collections for better organization
-                    and visibility. Add a name and category to highlight your
-                    collection.
-                  </div>
-                </div>
-                <div className="flex flex-col gap-1 text-[#667085] text-[14px]">
-                  <div>Collection Name</div>
-                  <input
-                    value={collectionName}
-                    onChange={(e) => setCollectionName(e.target.value)}
-                    className="border outline-none p-2 rounded-lg"
-                    placeholder="Collection Name"
-                  />
-                </div>
-                <div className="flex flex-col gap-1 text-[#667085] text-[14px]">
-                  <div>Collection category</div>
-                  <div
-                    onClick={() => setSelect((prev) => !prev)}
-                    className={`  outline-none relative  ${
-                      select === false
-                        ? "border rounded-lg"
-                        : "border rounded-t-lg"
-                    }`}
-                  >
-                    <div className="p-2 ">
-                      {!category
-                        ? "Select  category for your product"
-                        : category}
+                    <div className="text-[12px] mt-2">
+                      Group your products into collections for better
+                      organization and visibility. Add a name and category to
+                      highlight your collection.
                     </div>
-                    {select && (
-                      <div
-                        className={`duration-100 p-2 h-[100px] absolute  border rounded-b-xl bg-white w-full overflow-auto
+                  </div>
+                  <div className="flex flex-col gap-1 text-[#667085] text-[14px]">
+                    <div>Collection Name</div>
+                    <input
+                      value={collectionName}
+                      onChange={(e) => setCollectionName(e.target.value)}
+                      className="border outline-none p-2 rounded-lg"
+                      placeholder="Collection Name"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1 text-[#667085] text-[14px]">
+                    <div>Collection category</div>
+                    <div
+                      onClick={() => setSelect((prev) => !prev)}
+                      className={`  outline-none relative  ${
+                        select === false
+                          ? "border rounded-lg"
+                          : "border rounded-t-lg"
+                      }`}
+                    >
+                      <div className="p-2 ">
+                        {!category
+                          ? "Select  category for your product"
+                          : category}
+                      </div>
+                      {select && (
+                        <div
+                          className={`duration-100 p-2 h-[100px] absolute  border rounded-b-xl bg-white w-full overflow-auto
                         
                      }`}
-                      >
-                        {Collection.map((item, index) => (
-                          <div
-                            onClick={() => {
-                              setCategory(item.category);
-                              setTimeout(() => setSelect(false), 100);
-                            }}
-                            className="p-2 hover:bg-slate-50 border-b"
-                            key={index}
-                          >
-                            {item.category}
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                        >
+                          {Collection.map((item, index) => (
+                            <div
+                              onClick={() => {
+                                setCategory(item.category);
+                                setTimeout(() => setSelect(false), 100);
+                              }}
+                              className="p-2 hover:bg-slate-50 border-b"
+                              key={index}
+                            >
+                              {item.category}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <div
-                  onClick={createCollection}
-                  className="p-2 rounded-lg select-none cursor-pointer bg-[#3633ff] text-white text-[14px] text-center"
-                >
-                  + create collection
+                  <div
+                    onClick={() => {
+                      if (collectionName && category && !collectionres) {
+                        createCollection();
+                      }
+                    }}
+                    className="p-2 rounded-lg select-none cursor-pointer bg-[#3633ff] text-white text-[14px] text-center"
+                  >
+                    {collectionres ? "Creating..." : "+ Create collection"}
+                  </div>
                 </div>
               </div>
-            </div>
-          ) : null}
-          {/* collection data  */}
-          {isStoreVerified ? (
-            <div className="pt-2 -z-10">
-              {
-                <div className="h-[88%] bg-red-100 border rounded-2xl p-2 w-full overflow-auto space-y-2 pt-2 mt-[1%]">
-                  <div className="flex justify-between border-b pb-2 items-center">
-                    <div className="font-semibold">Name of collection</div>
-                    <Link
-                      href="/main/AddProduct"
-                      className="flex px-4 p-2 text-[14px] bg-blue-600 text-white items-center justify-center rounded-xl"
-                    >
-                      Add product
-                    </Link>
-                  </div>
-                  <div className="border py-2 pn:max-sm:hidden bg-white font-semibold text-[15px] tracking-tighter flex h-[10%] items-center w-full rounded-xl">
-                    <div className="w-[40%]  px-2">Product Name</div>
-                    <div className="w-[10%]  text-center">In stocks</div>
-                    <div className="w-[10%] text-center">Price</div>
-                    <div className="w-[10%] text-center ">Status</div>
-                    <div className="w-[20%] text-center ">Date</div>
-                    <div className="w-[10%] text-center">Action</div>
-                  </div>
-                  {/* <div className="flex h-[100px] pn:max-sm:justify-between items-center relative w-full">
-                    <div className="sm:w-[40%] items-center gap-2 px-2 flex">
-                      <div className="h-[70px] w-[70px] rounded-lg border-2 border-white"></div>
-                      <div>
-                        <div className="font-semibold text-[16px]">
-                          Product name
-                        </div>
-                        <div className="font-medium text-[14px]">
-                          by store owner
-                        </div>
-                      </div>
-                    </div>
-                    <div className="w-[10%] text-center pn:max-sm:hidden">
-                      4
-                    </div>
-                    <div className="w-[10%] text-center pn:max-sm:hidden">
-                      1.01k
-                    </div>
-                    <div className="w-[10%] text-center pn:max-sm:hidden">
-                      101k
-                    </div>
-                    <div className="w-[20%] text-center  pn:max-sm:hidden">
-                      47.59%
-                    </div>
+            ) : null}
+            {/* collection data  */}
+            {isStoreVerified ? (
+              <div className=" flex flex-col overflow-y-auto items-center justify-center -z-10">
+                {collectionData?.length > 0 ? (
+                  collectionData?.map((d: Collection, i) => (
                     <div
-                      onClick={() => setOpen(!open)}
-                      className="sm:w-[10%] text-center flex items-center justify-center"
+                      key={i}
+                      className="h-[88%] bg-slate-100 border rounded-2xl p-2 w-full overflow-auto space-y-2 pt-2 mt-[1%]"
                     >
-                      <BsThreeDotsVertical />
-                    </div>
-                    {open ? (
-                      <div className="absolute  w-[120px] bg-white  right-0 border shadow-lg rounded-2xl py-2 z-10">
-                        <button className="w-full px-4 py-2 text-sm hover:bg-gray-100 font-semibold">
-                          Edit
-                        </button>
-                        <button
-                          // onClick={() => deleteCommunity(d._id)} // Pass community ID here
-                          className="w-full px-4 py-2 text-sm hover:bg-gray-100 font-semibold"
+                      <div className="flex justify-between border-b pb-2 items-center">
+                        <div className="font-semibold">{d?.collectionName}</div>
+
+                        <Link
+                          href={`/main/AddProduct?userId=${userId}&collectionId=${d._id}`}
+                          className="flex  p-2 px-4 bg-[#305ff9] text-white text-[14px] items-center justify-center rounded-xl"
                         >
-                          Delete
-                        </button>
-                        <button
-                          // onClick={() => openPopup(d._id)} // Open popup for specific community
-                          className="w-full px-4 py-2 text-sm hover:bg-gray-100 font-semibold"
-                        >
-                          Posts
-                        </button>
+                          Add product
+                        </Link>
                       </div>
-                    ) : null}
-                  </div> */}
-                </div>
-              }
-            </div>
-          ) : (
-            <div>No collection available</div>
-          )}
+                      <div className="border py-2 pn:max-sm:hidden bg-white font-semibold text-[15px] tracking-tighter flex h-[10%] items-center w-full rounded-xl">
+                        <div className="w-[40%]  px-2">Product Name</div>
+                        <div className="w-[10%]  text-center">In stocks</div>
+                        <div className="w-[10%] text-center">Price</div>
+                        {/* <div className="w-[10%] text-center ">Status</div> */}
+                        <div className="w-[20%] text-center ">Orders</div>
+                        <div className="w-[10%] text-center">Action</div>
+                      </div>
+                      <div className="overflow-y-auto max-h-[400px] flex-col flex items-center justify-center">
+                        {d?.products?.length > 0 ? (
+                          d?.products.map((f: Products, i: number) => (
+                            <div
+                              key={i}
+                              className="flex  h-[100px] pn:max-sm:justify-between items-center relative w-full"
+                            >
+                              <div className="sm:w-[40%] items-center gap-2 px-2 flex">
+                                <div className="h-[70px] w-[70px] rounded-lg border-2 border-white">
+                                  <img
+                                    src={f?.images?.[0]?.content}
+                                    alt="product"
+                                    className="w-[100%] h-[100%] object-cover rounded-lg"
+                                  />
+                                </div>
+                                <div>
+                                  <div className="font-semibold text-[16px]">
+                                    {f?.name}
+                                  </div>
+                                  {/* <div className="font-medium text-[14px]">
+                          by store owner
+                        </div> */}
+                                </div>
+                              </div>
+                              <div className="w-[10%] text-center pn:max-sm:hidden">
+                                {f?.quantity}
+                              </div>
+                              <div className="w-[10%] text-center pn:max-sm:hidden">
+                                {f?.price}
+                              </div>
+                              <div className="w-[20%] text-center pn:max-sm:hidden">
+                                {f?.orderscount}
+                              </div>
+                              {/* <div className="w-[20%] text-center  pn:max-sm:hidden">
+                      47.59%
+                    </div> */}
+                              <div
+                                onClick={() => setOpen(!open)}
+                                className="sm:w-[10%] text-center flex items-center justify-center"
+                              >
+                                <BsThreeDotsVertical />
+                              </div>
+                              {open ? (
+                                <div className="absolute  w-[120px] bg-white  right-0 border shadow-lg rounded-2xl py-2 z-10">
+                                  {/* <button className="w-full px-4 py-2 text-sm hover:bg-gray-100 font-semibold">
+                          Edit
+                        </button> */}
+                                  <button
+                                    // onClick={() => deleteCommunity(d._id)} // Pass community ID here
+                                    className="w-full px-4 py-2 text-sm hover:bg-gray-100 font-semibold"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              ) : null}
+                            </div>
+                          ))
+                        ) : (
+                          <div
+                            // href={`/main/AddProduct?userId=${userId}&collectionId=${d._id}`}
+                            className="flex p-2 px-4 text-[14px]  text-slate-600 items-center  justify-center rounded-xl"
+                          >
+                            Oops! No products found. Your
+                            <span className="text-blue-600 px-1 font-bold">
+                              earnings
+                            </span>
+                            are waiting for you
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div
+                    onClick={() => {
+                      setCollpopup(true);
+                    }}
+                    className="text-center p-2 mt-2 rounded-xl text-white bg-[#305ff9] max-w-[17%] pn:max-pp:text-[12px] pn:max-sm:max-w-[30%]"
+                  >
+                    Create Collection
+                  </div>
+                )}
+              </div>
+            ) : null}
+          </div>
         </div>
       )}
     </>
   );
 };
-
+const Page = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PageContent />
+    </Suspense>
+  );
+};
 export default Page;

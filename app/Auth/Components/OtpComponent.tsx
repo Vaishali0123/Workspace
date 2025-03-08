@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 // import InputOTPPattern from "@/components/ui/InputOTPPattern";
 // import { phoneAuth } from "../utils/otpUtils";
 import toast from "react-hot-toast";

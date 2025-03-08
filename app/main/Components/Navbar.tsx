@@ -1,25 +1,23 @@
-import React, { use, useEffect, useState } from "react";
+import React, { useState } from "react";
 import { IoMdLogOut } from "react-icons/io";
 import { IoSettingsOutline } from "react-icons/io5";
 import { IoStorefrontOutline } from "react-icons/io5";
 import { MdOutlineAnalytics } from "react-icons/md";
 import { RiMoneyRupeeCircleLine } from "react-icons/ri";
 import { FiUsers } from "react-icons/fi";
-import { MdOutlineDashboardCustomize } from "react-icons/md";
 import Logo from "../../assets/Logo";
 import Cookies from "js-cookie";
-// import { RiBillLine } from "react-icons/ri";
-// import image8 from "../assets/adspace.png";
-// import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 // import Cookies from "js-cookie";
 import toast from "react-hot-toast";
-import { API } from "@/app/utils/helpers";
-import axios from "axios";
-const navbar = ({ userId, path }: { userId: any; path: string }) => {
+import { useAuthContext } from "@/app/Auth/Components/auth";
+
+const Navbar = ({ path }: { path: string }) => {
   const [pop, setPop] = useState<boolean>(false);
   const router = useRouter();
+  const { data } = useAuthContext();
+  const userId = data?.id;
   // const [click, setClick] = useState(0);
   const openPopup = (): void => setPop(true);
   const closePopup = (): void => setPop(false);
@@ -39,6 +37,7 @@ const navbar = ({ userId, path }: { userId: any; path: string }) => {
     Cookies.remove("token");
     router.push("/Auth");
   };
+
   return (
     <>
       {pop && (
@@ -91,7 +90,13 @@ const navbar = ({ userId, path }: { userId: any; path: string }) => {
           </div>
           <div className="sm:space-y-1 pn:max-sm:flex sm:max-md:pt-8 pn:max-sm:gap-2 pn:max-sm:items-center pn:max-sm:w-full pn:max-sm:justify-between ">
             <Link
-              href={"/main/Overview"}
+              href={{
+                pathname: "/main/Overview",
+                // query: {
+                //   userId: userId,
+                //   comdata: encodeURIComponent(JSON.stringify(comdata)),
+                // },
+              }}
               className={`sm:w-full rounded-2xl duration-100 pn:max-md:flex-col hover:bg-slate-50 sm:py-2 pn:max-sm:h-[40px] pn:max-sm:w-[40px] md:pl-4 items-center pn:max-sm:text-[10px] pn:max-sm:flex-col flex gap-1 sm:gap-2 ${
                 path === "/main/Overview"
                   ? "sm:bg-[#3388ff12] sm:border sm:border-[#3388ff] text-[#3388ff]"
@@ -104,8 +109,13 @@ const navbar = ({ userId, path }: { userId: any; path: string }) => {
               </div>
             </Link>
             <Link
-              href={{ pathname: "/main/Community", query: { userId: userId } }}
-              // href={"/main/Community"}
+              href={{
+                pathname: "/main/Community",
+                query: {
+                  userId: userId,
+                  // comdata: encodeURIComponent(JSON.stringify(comdata)),
+                },
+              }}
               className={`sm:w-full rounded-2xl duration-100 pn:max-md:flex-col hover:bg-slate-50 sm:py-2 pn:max-sm:h-[40px] pn:max-sm:w-[40px] md:pl-4 items-center pn:max-sm:text-[10px] pn:max-sm:flex-col flex gap-1 sm:gap-2 ${
                 path === "/main/Community"
                   ? "sm:bg-[#3388ff12] sm:border sm:border-[#3388ff] text-[#3388ff]"
@@ -118,7 +128,14 @@ const navbar = ({ userId, path }: { userId: any; path: string }) => {
               </div>
             </Link>
             <Link
-              href={"/main/Store"}
+              href={{
+                pathname: "/main/Store",
+                query: {
+                  userId: userId,
+                  isStoreVerified: data?.isStoreVerified,
+                  storeid: data?.storeid,
+                },
+              }}
               className={`sm:w-full rounded-2xl duration-100 pn:max-md:flex-col hover:bg-slate-50 sm:py-2 pn:max-sm:h-[40px] pn:max-sm:w-[40px] md:pl-4 items-center pn:max-sm:text-[10px] pn:max-sm:flex-col flex gap-1 sm:gap-2 ${
                 path === "/main/Store"
                   ? "sm:bg-[#3388ff12] sm:border sm:border-[#3388ff] text-[#3388ff]"
@@ -130,7 +147,7 @@ const navbar = ({ userId, path }: { userId: any; path: string }) => {
                 Store
               </div>
             </Link>
-            <Link
+            {/* <Link
               href={"/main/Prosite"}
               className={`sm:w-full rounded-2xl duration-100 pn:max-md:flex-col hover:bg-slate-50 sm:py-2 pn:max-sm:h-[40px] pn:max-sm:w-[40px] md:pl-4 items-center pn:max-sm:text-[10px] pn:max-sm:flex-col flex gap-1 sm:gap-2 ${
                 path === "/main/Prosite"
@@ -142,9 +159,14 @@ const navbar = ({ userId, path }: { userId: any; path: string }) => {
               <div className="pn:max-md:text-[12px] pn:max-md:font-semibold">
                 Prosite
               </div>
-            </Link>
+            </Link> */}
             <Link
-              href={"/main/Earnwithus"}
+              href={{
+                pathname: "/main/Earnwithus",
+                query: {
+                  userId: userId,
+                },
+              }}
               className={`sm:w-full rounded-2xl duration-100 pn:max-md:flex-col hover:bg-slate-50 sm:py-2 pn:max-sm:h-[40px] pn:max-sm:w-[40px] md:pl-4 items-center pn:max-sm:text-[10px] pn:max-sm:flex-col flex gap-1 sm:gap-2 ${
                 path === "/main/Earnwithus"
                   ? "sm:bg-[#3388ff12] sm:border sm:border-[#3388ff] text-[#3388ff]"
@@ -160,7 +182,12 @@ const navbar = ({ userId, path }: { userId: any; path: string }) => {
               </div>
             </Link>
             <Link
-              href={"/main/SetUp"}
+              href={{
+                pathname: "/main/SetUp",
+                query: {
+                  userId: userId,
+                },
+              }}
               className={`sm:w-full rounded-2xl pn:max-md:hidden duration-100 pn:max-md:flex-col hover:bg-slate-50 sm:py-2 pn:max-sm:h-[40px] pn:max-sm:w-[40px] md:pl-4 items-center pn:max-sm:text-[10px] pn:max-sm:flex-col flex gap-1 sm:gap-2 ${
                 path === "/main/SetUp"
                   ? "sm:bg-[#3388ff12] sm:border sm:border-[#3388ff] text-[#3388ff]"
@@ -188,4 +215,4 @@ const navbar = ({ userId, path }: { userId: any; path: string }) => {
   );
 };
 
-export default navbar;
+export default Navbar;

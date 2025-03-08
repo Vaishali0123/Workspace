@@ -1,27 +1,115 @@
 "use client";
-import { setProduct } from "@/app/redux/slices/productSlice";
-import React, { useState } from "react";
-import { useDispatch } from "react-redux";
-
-const page = () => {
+import { API } from "@/app/utils/helpers";
+import axios from "axios";
+import { useSearchParams } from "next/navigation";
+import React, { Suspense, useState } from "react";
+import toast from "react-hot-toast";
+interface CustomFile {
+  file: File;
+  url: string;
+}
+const PageContent = () => {
   const [yes, setYes] = useState(false);
-  const dispatch = useDispatch();
+  const search = useSearchParams();
+  const userId = search.get("userId");
+  const collectionId = search.get("collectionId");
+  const [productname, setProductname] = useState("choco");
+  const [desc, setDesc] = useState("cc");
+  const [price, setPrice] = useState(500);
+  const [discountedprice, setDiscountedprice] = useState(450);
+  const [quantity, setQuantity] = useState(15);
+  const [weight, setWeight] = useState("1");
+  const [images, setImages] = useState<CustomFile[]>([]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return; // Ensure files exist
+
+    const files = Array.from(e.target.files);
+    const maxSize = 0.5 * 1024 * 1024; // 1MB in bytes
+    let validImages: CustomFile[] = [];
+
+    files.forEach((file) => {
+      if (file?.size > maxSize) {
+        alert(`"${file.name}" is larger than 500KB and was not added.`);
+      } else {
+        validImages.push({
+          file,
+          url: URL.createObjectURL(file),
+        });
+      }
+    });
+
+    if (images.length + validImages.length > 5) {
+      alert("You can only upload up to 5 images.");
+      validImages = validImages.slice(0, 5 - images.length);
+    }
+
+    setImages((prevImages) => [...prevImages, ...validImages]);
+  };
+  const removeImage = (index: number) => {
+    setImages((prevImages) => prevImages.filter((_, i) => i !== index));
+  };
+  const addproduct = async () => {
+    if (images.length === 0) {
+      toast.error("Please upload at least one image before proceeding.");
+      return;
+    }
+    try {
+      const formData = new FormData();
+
+      // Append product details
+      formData.append("name", productname);
+      formData.append("description", desc);
+      formData.append("weight", weight);
+      // formData.append("images", images);
+      images.forEach((image) => {
+        formData.append("images", image.file);
+      });
+      const res = await axios.post(
+        `${API}/addProduct/${userId}/${collectionId}`,
+        formData,
+        {
+          params: {
+            price: price,
+            discountPrice: discountedprice,
+            quantity: quantity,
+          },
+        }
+      );
+      if (res?.data?.success) {
+        console.log(res?.data, "added");
+        toast.success("Upload successful!");
+        setImages([]);
+      }
+    } catch (e) {
+      toast.error(e);
+    }
+  };
 
   return (
     <div className="h-full w-full flex pn:max-md:flex-col">
       <div className="w-[50%] pn:max-md:w-full pn:max-md:h-full p-2 space-y-2">
         {/* general information section */}
         <div className="p-2 border bg-white rounded-xl">
-          <div className="font-semibold text-[18px] p-1">
-            General information
+          <div className="flex flex-row w-[100%] justify-between">
+            <div className="font-semibold text-[18px] p-1">
+              General information
+            </div>
+            <div
+              onClick={addproduct}
+              className="font-semibold bg-blue-600 text-white  text-[18px] px-4 py-2 rounded-xl"
+            >
+              Add Product
+            </div>
           </div>
           <div className="p-1">
             <div className="text-[14px] flex justify-between items-center font-semibold text-slate-600">
               Product Name <div>(0/100)</div>
             </div>
             <input
+              value={productname}
               onChange={(e) => {
-                // dispatch(setProduct({ productname: e.target.value }));
+                setProductname(e.target.value);
               }}
               type="text"
               placeholder="Product Name"
@@ -33,9 +121,10 @@ const page = () => {
               Product Description <div>(0/200)</div>
             </div>
             <textarea
-              //   onChange={(e) => {
-              //     dispatch();
-              //   }}
+              value={desc}
+              onChange={(e) => {
+                setDesc(e.target.value);
+              }}
               placeholder="Product description"
               className="p-1 h-[100px] w-full border rounded-lg"
             />
@@ -54,11 +143,30 @@ const page = () => {
               Add Media Name<div>(0/5)</div>
             </div>
             <div className="flex gap-2 items-center flex-wrap ">
-              <input
-                type="file"
-                placeholder="ADD"
-                className="p-1 border rounded-lg h-[100px] w-[100px] flex items-center justify-center"
-              />
+              {images.map((image, index) => (
+                <div key={index} className="relative w-[100px] h-[100px]">
+                  <img
+                    src={image.url}
+                    alt={`Uploaded ${index}`}
+                    className="w-full h-full object-cover rounded-lg border"
+                  />
+                  <button
+                    className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full px-2"
+                    onClick={() => removeImage(index)}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+              {images.length < 5 && (
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleFileChange}
+                  className="p-1 border rounded-lg h-[100px] w-[100px] flex items-center justify-center"
+                />
+              )}
             </div>
           </div>
         </div>
@@ -73,7 +181,11 @@ const page = () => {
                 Selling price
               </div>
               <input
+                value={price}
                 type="Number"
+                onChange={(e) => {
+                  setPrice(Number(e.target.value));
+                }}
                 placeholder="Product M.R.P"
                 className="p-1 w-full border rounded-lg"
               />
@@ -83,7 +195,11 @@ const page = () => {
                 Discount price
               </div>
               <input
+                value={discountedprice}
                 type="Number"
+                onChange={(e) => {
+                  setDiscountedprice(Number(e.target.value));
+                }}
                 placeholder="Product Discount"
                 className="p-1 w-full border rounded-lg"
               />
@@ -94,7 +210,11 @@ const page = () => {
               Quantity
             </div>
             <input
+              value={quantity}
               type="Number"
+              onChange={(e) => {
+                setQuantity(Number(e.target.value));
+              }}
               placeholder="Product In Stock"
               className="p-1 w-full border rounded-lg"
             />
@@ -121,7 +241,7 @@ const page = () => {
             >
               <div
                 className={` h-[18px] w-[18px] duration-150 bg-white rounded-3xl absolute ${
-                  yes === false
+                  !yes
                     ? " right-[1px] left-auto top-[1.2px] "
                     : " left-[1px] right-auto top-[1.2px] "
                 }`}
@@ -138,8 +258,12 @@ const page = () => {
                 Weight
               </div>
               <input
-                type="Number"
-                placeholder="Product weight"
+                type="text"
+                value={weight}
+                onChange={(e) => {
+                  setWeight(e.target.value);
+                }}
+                placeholder="In Kgs"
                 className="p-1 w-full border rounded-lg"
               />
             </div>
@@ -197,5 +321,11 @@ const page = () => {
     </div>
   );
 };
-
-export default page;
+const Page = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PageContent />
+    </Suspense>
+  );
+};
+export default Page;

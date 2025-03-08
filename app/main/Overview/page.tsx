@@ -6,129 +6,286 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { PieChart } from "lucide-react";
-import { LineChart, Pie } from "recharts";
-import {
-  BarChart,
-  Label,
-  LabelList,
-  Line,
-  PolarRadiusAxis,
-  RadialBar,
-  RadialBarChart,
-} from "recharts";
-import React, { useState } from "react";
+import { BarChart, Line, LineChart, YAxis } from "recharts";
+import React, { useCallback, useEffect, useState } from "react";
 import { Bar, CartesianGrid, XAxis } from "recharts";
-import { BsPeople } from "react-icons/bs";
-import { PiClipboardText } from "react-icons/pi";
-import { FiShoppingBag } from "react-icons/fi";
-import { FaAnglesRight } from "react-icons/fa6";
 import { RiArrowDropDownLine } from "react-icons/ri";
+import { API } from "@/app/utils/helpers";
+import axios from "axios";
+import { useAuthContext } from "@/app/Auth/Components/auth";
+interface CommunityAnalytics {
+  createdAt: Date;
+  newmembers: Array<string>;
+  activemembers: Array<string>;
+  userleft: Array<string>;
+  visitor: Array<string>;
+  reports: Array<string>;
+}
+interface PostAnalytics {
+  date: Date;
+  views: number;
+  clicks: number;
+  shares: number;
+  impressions: number;
+}
 
-const Page = ({ UserId }: { UserId: string }) => {
-  const [click, setClick] = useState<number>(0);
-  const chartData = [
-    { date: "2024-04-01", desktop: 222, mobile: 150 },
-    { date: "2024-04-02", desktop: 97, mobile: 180 },
-    { date: "2024-04-03", desktop: 167, mobile: 120 },
-    { date: "2024-04-04", desktop: 242, mobile: 260 },
-    { date: "2024-04-05", desktop: 373, mobile: 290 },
-    { date: "2024-04-06", desktop: 301, mobile: 340 },
-    { date: "2024-04-07", desktop: 245, mobile: 180 },
-    { date: "2024-04-08", desktop: 409, mobile: 320 },
-    { date: "2024-04-09", desktop: 59, mobile: 110 },
-    { date: "2024-04-10", desktop: 261, mobile: 190 },
-    { date: "2024-04-11", desktop: 327, mobile: 350 },
-    { date: "2024-04-12", desktop: 292, mobile: 210 },
-    { date: "2024-04-13", desktop: 342, mobile: 380 },
-    { date: "2024-04-14", desktop: 137, mobile: 220 },
-    { date: "2024-04-15", desktop: 120, mobile: 170 },
-    { date: "2024-04-16", desktop: 138, mobile: 190 },
-    { date: "2024-04-17", desktop: 446, mobile: 360 },
-    { date: "2024-04-18", desktop: 364, mobile: 410 },
-    { date: "2024-04-19", desktop: 243, mobile: 180 },
-    { date: "2024-04-20", desktop: 89, mobile: 150 },
-    { date: "2024-04-21", desktop: 137, mobile: 200 },
-    { date: "2024-04-22", desktop: 224, mobile: 170 },
-    { date: "2024-04-23", desktop: 138, mobile: 230 },
-    { date: "2024-04-24", desktop: 387, mobile: 290 },
-    { date: "2024-04-25", desktop: 215, mobile: 250 },
-    { date: "2024-04-26", desktop: 75, mobile: 130 },
-    { date: "2024-04-27", desktop: 383, mobile: 420 },
-    { date: "2024-04-28", desktop: 122, mobile: 180 },
-    { date: "2024-04-29", desktop: 315, mobile: 240 },
-    { date: "2024-04-30", desktop: 454, mobile: 380 },
-    { date: "2024-05-01", desktop: 165, mobile: 220 },
-    { date: "2024-05-02", desktop: 293, mobile: 310 },
-    { date: "2024-05-03", desktop: 247, mobile: 190 },
-    { date: "2024-05-04", desktop: 385, mobile: 420 },
-    { date: "2024-05-05", desktop: 481, mobile: 390 },
-    { date: "2024-05-06", desktop: 498, mobile: 520 },
-  ];
+interface Topics {
+  nature: string;
+  postcount: number;
+  _id: string;
+  topicName: string;
+}
+interface Post {
+  type: string;
+  content: string;
+  thumbnail?: string;
+}
 
-  const chartDataes = [
-    { browser: "chrome", visitors: 275, fill: "var(--color-chrome)" },
-    { browser: "safari", visitors: 200, fill: "var(--color-safari)" },
-    { browser: "firefox", visitors: 287, fill: "var(--color-firefox)" },
-    { browser: "edge", visitors: 173, fill: "var(--color-edge)" },
-    { browser: "other", visitors: 190, fill: "var(--color-other)" },
-  ];
-  const chartConfiges = {
-    visitors: {
-      label: "Visitors",
+interface PostData {
+  _id: string;
+  title: string;
+  description: string;
+  likes: number;
+  commentcount: number;
+  analytics: {
+    views: number;
+    shares: number;
+    clicks: number;
+    impressions: number;
+  }[];
+  post: Post[];
+}
+
+interface CommunityData {
+  _id: string;
+  communityName: string;
+  dp: string;
+  dps: string;
+  topic: { nature: string }[];
+  postcount: number;
+  memberCount: number;
+  topics: Topics[];
+}
+const Page = () => {
+  const { data } = useAuthContext();
+  const [open, setOpen] = useState(false);
+  // Retrieve `userId`
+  const userId = data?.id;
+
+  const [comindex, setComindex] = useState(0);
+  const [postData, setPostData] = useState<PostData[]>([]);
+  const [comdata, setComData] = useState<CommunityData[]>([]);
+  const [hasFetched, setHasFetched] = useState<boolean>(false); // Track fetch state
+  const [communityId, setCommunityId] = useState("");
+  const [topicId, setTopicId] = useState("");
+  const [comAnalyt, setComAnalyt] = useState([]);
+  const [postAnalyt, setPostAnalyt] = useState([]);
+  const [currentAnalyt, setCurrentAnalyt] = useState("Community Analytics");
+  const [selectedPost, setSelectedPost] = useState("");
+  // Retrieve & decode `comdata`
+  // const comdataString = searchParams.get("comdata");
+
+  // const comdata = comdataString
+  //   ? JSON.parse(decodeURIComponent(comdataString))
+  //   : [];
+
+  const click = 0;
+
+  // get community
+  const fetchCommunity = async () => {
+    if (hasFetched) return; // Prevent multiple API calls
+    try {
+      const res = await axios.get(`${API}/getcommunities/${data?.id}`);
+      console.log(res?.data, "ii");
+      if (res?.data?.success) {
+        setComData(res?.data?.data?.comdata);
+        setCommunityId(res?.data?.data?.comdata?.[0]?._id);
+        setTopicId(res?.data?.data?.comdata?.[comindex]?.topics?.[0]?._id);
+        setHasFetched(true); // Mark as fetched
+        // if (comdata.length > 0) {
+        //   fetchComAnalytics(res?.data?.data?.comdata?.[0]?._id);
+        // }
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  //Get Community analytics
+  const fetchComAnalytics = useCallback(
+    async (communityId: string) => {
+      // setLoading(true);
+      try {
+        // const res = await axios.post(
+        //   `${API}/comanalytics/${data?.id}/${communityId}`
+        // );
+        const res = await axios.get(
+          `${API}/getcomanalytics/${data?.id}/${communityId}`
+        );
+
+        setComAnalyt(res?.data?.data);
+      } catch (error) {
+        console.error(error);
+      }
+      // setLoading(false);
     },
-    chrome: {
-      label: "Chrome",
-      color: "hsl(var(--chart-1))",
-    },
-    safari: {
-      label: "Safari",
-      color: "hsl(var(--chart-2))",
-    },
-    firefox: {
-      label: "Firefox",
-      color: "hsl(var(--chart-3))",
-    },
-    edge: {
-      label: "Edge",
-      color: "hsl(var(--chart-4))",
-    },
-    other: {
-      label: "Other",
-      color: "hsl(var(--chart-5))",
-    },
-  } satisfies ChartConfig;
-  const chartConfig = {
+    [communityId]
+  );
+  let chartData = comAnalyt?.map((entry: CommunityAnalytics) => {
+    // Format the date to match the 'YYYY-MM-DD' format
+    const formattedDate = new Date(entry.createdAt).toISOString().split("T")[0];
+
+    // Assuming that newmembers and activemembers have counts for the new_member and Active_member values
+    const newMemberCount = entry.newmembers.length;
+    const activeMemberCount = entry.activemembers.length;
+    const userLeftCount = entry.userleft.length;
+    const visitorCount = entry.visitor.length;
+    const reportsCount = entry.reports.length;
+
+    return {
+      date: formattedDate,
+      new_member: newMemberCount,
+      Active_member: activeMemberCount,
+      user_left: userLeftCount,
+      visitor: visitorCount,
+      reports: reportsCount,
+    };
+  });
+  useEffect(() => {
+    if (userId) {
+      fetchCommunity();
+    }
+  }, [userId]);
+  // const chartDataes = [
+  //   { browser: "chrome", visitors: 275, fill: "var(--color-chrome)" },
+  //   { browser: "safari", visitors: 200, fill: "var(--color-safari)" },
+  //   { browser: "firefox", visitors: 287, fill: "var(--color-firefox)" },
+  //   { browser: "edge", visitors: 173, fill: "var(--color-edge)" },
+  //   { browser: "other", visitors: 190, fill: "var(--color-other)" },
+  // ];
+  // const chartConfiges = {
+  //   visitors: {
+  //     label: "Visitors",
+  //   },
+  //   chrome: {
+  //     label: "Chrome",
+  //     color: "hsl(var(--chart-1))",
+  //   },
+  //   safari: {
+  //     label: "Safari",
+  //     color: "hsl(var(--chart-2))",
+  //   },
+  //   firefox: {
+  //     label: "Firefox",
+  //     color: "hsl(var(--chart-3))",
+  //   },
+  //   edge: {
+  //     label: "Edge",
+  //     color: "hsl(var(--chart-4))",
+  //   },
+  //   other: {
+  //     label: "Other",
+  //     color: "hsl(var(--chart-5))",
+  //   },
+  // } satisfies ChartConfig;
+
+  let chartConfig: ChartConfig = {
     views: {
       label: "Page Views",
     },
-    desktop: {
-      label: "Desktop",
+    new_member: {
+      label: "new member",
       color: "hsl(var(--chart-1))",
     },
-    mobile: {
-      label: "Mobile",
+    Active_member: {
+      label: "Active member",
       color: "hsl(var(--chart-2))",
-    },
-    total: {
-      label: "total",
-      color: "yellow",
     },
   } satisfies ChartConfig;
 
-  const chartDatas = [{ month: "january", desktop: 1260, mobile: 570 }];
+  // const chartDatas = [{ month: "january", desktop: 1260, Active_member: 570 }];
   const [activeChart, setActiveChart] =
-    React.useState<keyof typeof chartConfig>("desktop");
+    React.useState<keyof typeof chartConfig>("new_member");
   const total = React.useMemo(
     () => ({
-      desktop: chartData.reduce((acc, curr) => acc + curr.desktop, 0),
-      mobile: chartData.reduce((acc, curr) => acc + curr.mobile, 0),
-      total: chartData.reduce((acc, curr) => acc + curr.mobile, 0),
+      new_member: chartData.reduce((acc, curr) => acc + curr.new_member, 0),
+      Active_member: chartData.reduce(
+        (acc, curr) => acc + curr.Active_member,
+        0
+      ),
+      total: chartData.reduce((acc, curr) => acc + curr.Active_member, 0),
     }),
     []
   );
 
-  const totalVisitors = chartData[0].desktop + chartData[0].mobile;
+  useEffect(() => {
+    if (communityId && topicId) {
+      fetchPosts();
+      fetchComAnalytics(communityId);
+    }
+  }, [communityId, topicId]);
+
+  const fetchPosts = async () => {
+    try {
+      const response = await axios.get(
+        `${API}/getpost/${communityId}/${topicId}`
+      );
+      if (response.data?.success) {
+        setPostData(response.data.posts);
+      }
+    } catch (err) {
+      console.error("Error fetching posts", err);
+    }
+  };
+
+  const fetchpostanalytics = async (postId: string) => {
+    try {
+      const res = await axios.get(
+        `${API}/getpostanalytics/${data?.id}/${postId}/${communityId}`
+      );
+
+      if (res?.data?.success) {
+        setPostAnalyt(res.data.data?.analytics || []);
+        setCurrentAnalyt("Post Analytics");
+        chartConfig = {
+          views: {
+            label: "Page Views",
+            color: "hsl(var(--chart-1))",
+          },
+          clicks: {
+            label: "Clicks",
+            color: "hsl(var(--chart-2))",
+          },
+          impressions: {
+            label: "Impressions",
+            color: "hsl(var(--chart-3))",
+          },
+          shares: {
+            label: "Shares",
+            color: "hsl(var(--chart-4))",
+          },
+        };
+        chartData =
+          res.data.data?.analytics?.map((entry: PostAnalytics) => ({
+            date: new Date(entry.date).toISOString().split("T")[0], // Format 'YYYY-MM-DD'
+            views: entry?.views || 0,
+            clicks: entry?.clicks || 0,
+            impressions: entry?.impressions || 0,
+            shares: entry?.shares || 0,
+          })) || [];
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+  // useEffect(() => {
+  //   if (postData.length > 0) {
+  //     setCurrentAnalyt("Post Analytics");
+  //   } else {
+  //     setCurrentAnalyt("Community Analytics");
+  //   }
+  // }, [postData]);
+  // const totalVisitors = chartData[0].new_member + chartData[0].Active_member;
   // console.log(UserId, "hi");
   return (
     <div className="h-full w-full">
@@ -136,7 +293,7 @@ const Page = ({ UserId }: { UserId: string }) => {
         <div className="p-1 px-2 h-fit font-semibold text-[#1d1d1d] ">
           Overview
         </div>
-        <div className=" items-center px-2 flex gap-2">
+        {/* <div className=" items-center px-2 flex gap-2">
           <div
             onClick={() => setClick(0)}
             className={`p-2 px-4 text-[14px] h-fit border duration-200 rounded-xl ${
@@ -144,41 +301,81 @@ const Page = ({ UserId }: { UserId: string }) => {
             }`}
           >
             Community
-          </div>
-          <div
+          </div> */}
+        {/* <div
             onClick={() => setClick(1)}
             className={`p-2 px-4 text-[14px] h-fit border duration-200 rounded-xl ${
               click === 1 ? "bg-[#307fff] text-white border-[#307fff]" : ""
             }`}
           >
             Store
-          </div>
-          <div
+          </div> */}
+        {/* <div
             onClick={() => setClick(2)}
             className={`p-2 px-4 text-[14px] h-fit border duration-200 rounded-xl ${
               click === 2 ? "bg-[#307fff] text-white border-[#307fff]" : ""
             }`}
           >
             Prosite
-          </div>
-        </div>
+          </div> */}
+        {/* </div> */}
       </div>
       {click === 0 ? (
         <div className="w-full h-[calc(100%-60px)] pn:max-sm:flex-col pn:max-sm:p-2 pn:max-sm:overflow-auto pn:max-sm:overflew-y-scroll flex gap-2 ">
           <div className=" p-2 w-[30%] pn:max-sm:h-full pn:max-sm:w-full rounded-3xl border sm:overflow-hidden bg-white space-y-1 ">
             {/* select community */}
-            <div className=" bg-slate-50 h-[60px] rounded-t-3xl border p-2">
-              <div className="flex w-full justify-between items-center border p-1 rounded-t-2xl bg-white">
+            <div className=" bg-slate-50 relative h-[60px] rounded-t-3xl border p-2">
+              <div
+                onClick={() => setOpen(!open)}
+                className="flex w-full justify-between items-center border p-1 rounded-t-2xl bg-white"
+              >
                 <div className="flex items-center gap-2">
-                  <div className="w-[30px] h-[30px] rounded-xl border"></div>
-                  <div className="">community name</div>
+                  <div className="w-[30px] h-[30px] rounded-xl border">
+                    <img
+                      alt="dps"
+                      src={comdata?.[comindex]?.dp}
+                      className=" bg-contain bg-slate-400 rounded-xl w-[30px] h-[30px]"
+                    />
+                  </div>
+                  <div className="whitespace-nowrap text-[14px] text-ellipsis">
+                    {comdata?.[comindex]?.communityName}
+                  </div>
                 </div>
                 <RiArrowDropDownLine />
               </div>
+              {open ? (
+                <div className="py-2 rounded-b-2xl border  overflow-auto">
+                  {comdata.map((d, i: number) => (
+                    <div
+                      key={i}
+                      onClick={() => {
+                        setComindex(i);
+                        setCommunityId(d?._id);
+                        fetchComAnalytics(d?._id);
+                        setTopicId("");
+                        setOpen(!open);
+                      }}
+                      className="flex w-full justify-between items-center p-1 bg-white"
+                    >
+                      <div className="flex items-center bg-white gap-2">
+                        <div className="w-[30px] h-[30px] rounded-xl border">
+                          <img
+                            alt="dps"
+                            src={d?.dp}
+                            className=" bg-contain bg-slate-400 rounded-xl w-[30px] h-[30px]"
+                          />
+                        </div>
+                        <div className="">{d?.communityName}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
             </div>
+
             {/* poplarity  */}
-            <div className="h-[150px] w-full border ">
-              <Card className="flex h-full flex-col shadow-none p-2 border-none rounded-3xl">
+            {/* <div className="h-[150px] w-full -z-40 border ">
+              <Card className="flex h-full -z-20 flex-col shadow-none p-2 border-none rounded-3xl">
                 <CardContent className="flex h-full flex-1 items-center pb-0">
                   <ChartContainer
                     config={chartConfig}
@@ -238,8 +435,8 @@ const Page = ({ UserId }: { UserId: string }) => {
                         className="stroke-transparent stroke-2"
                       />
                       <RadialBar
-                        dataKey="mobile"
-                        fill="var(--color-mobile)"
+                        dataKey="Active_member"
+                        fill="var(--color-Active_member)"
                         stackId="a"
                         cornerRadius={5}
                         className="stroke-transparent stroke-2"
@@ -248,168 +445,296 @@ const Page = ({ UserId }: { UserId: string }) => {
                   </ChartContainer>
                 </CardContent>
               </Card>
-            </div>
+            </div> */}
+
             {/* topic  */}
-            <div className="p-2 hover:bg-slate-50 active:bg-slate-100 h-[50px] w-full border flex justify-between items-center">
+            <div className="p-2 hover:bg-slate-50 active:bg-slate-100  h-[50px] w-full border flex justify-between items-center">
               Topics
               <div className="flex gap-2 items-center">
-                <div className="p-1 bg-white active:bg-slate-100 hover:bg-slate-100 select-none cursor-pointer px-2 rounded-xl text-[14px] border">
-                  Post
-                </div>
-                <div className="p-1 bg-white active:bg-slate-100 hover:bg-slate-100 select-none cursor-pointer px-2 rounded-xl text-[14px] border">
+                {comdata?.[comindex]?.topics
+                  ?.filter(
+                    (d: Topics) =>
+                      d.nature != "chats" &&
+                      d.nature != "Chats" &&
+                      d?.topicName != "All"
+                  )
+                  .map((d: Topics, i: number) => (
+                    <div
+                      key={i}
+                      onClick={() => {
+                        setTopicId(d._id);
+                        setCommunityId(comdata[comindex]?._id);
+                      }}
+                      className="p-1 bg-white active:bg-slate-100 hover:bg-slate-100 select-none cursor-pointer px-2 rounded-xl text-[14px] border"
+                    >
+                      {d?.topicName}
+                    </div>
+                  ))}
+
+                {/* <div className="p-1 bg-white active:bg-slate-100 hover:bg-slate-100 select-none cursor-pointer px-2 rounded-xl text-[14px] border">
                   All
                 </div>
                 <div className="p-1 bg-white active:bg-slate-100 hover:bg-slate-100 select-none cursor-pointer px-2 rounded-xl text-[14px] border">
                   New challenge
-                </div>
+                </div> */}
               </div>
             </div>
+
             {/* Analytics  */}
-            <div className=" h-[calc(100%-270px)] w-full border overflow-hidden rounded-b-2xl">
-              <div className="flex gap-2 h-[40px] border-b items-center">
+            <div className=" h-[calc(100%-120px)] w-full border overflow-hidden rounded-b-2xl">
+              {/* <div className="flex gap-2 h-[40px] border-b items-center">
                 <div className="p-1 px-2 rounded-xl text-[14px]">Post</div>
                 <div className="p-1 px-2 rounded-xl text-[14px]">States</div>
-              </div>
+              </div> */}
               <div className="h-[calc(100%-40px)] p-1 w-full  overflow-auto">
                 {/* post  */}
-                <div className="gap-2 w-full h-[50px] border-b flex items-center justify-between">
-                  <div className="flex gap-2 items-center">
-                    <div className="h-[40px] w-[40px] border"></div>
-                    <div>post name</div>
+                {postData?.length > 0 ? (
+                  postData?.map(
+                    (f, i) =>
+                      f?.post?.length > 0 && (
+                        <div
+                          key={i}
+                          onClick={(e) => {
+                            e.preventDefault();
+
+                            if (selectedPost === f?._id) {
+                              return;
+                            }
+                            setSelectedPost(f?._id);
+                            fetchpostanalytics(f?._id);
+                          }}
+                          className={`gap-2 w-full h-[50px] border-b ${
+                            selectedPost === f?._id && "bg-blue-300  px-1"
+                          } flex items-center justify-between`}
+                        >
+                          <div className="flex gap-2 items-center">
+                            <div className="h-[40px] w-[40px] border rounded-[10px]">
+                              {f?.post?.[0]?.type?.startsWith("image") ? (
+                                <img
+                                  src={f?.post?.[f?.post?.length - 1]?.content}
+                                  alt="Post Image"
+                                  className="h-[40px] w-[40px] rounded-xl"
+                                />
+                              ) : (
+                                <img
+                                  src={
+                                    f?.post?.[f?.post?.length - 1]?.thumbnail
+                                  }
+                                  alt="Post Image"
+                                  className="h-[40px] w-[40px] rounded-xl"
+                                />
+                              )}
+                            </div>
+                            <div className="text-[12px] whitespace-nowrap text-ellipsis truncate w-[110px] ">
+                              {f?.title ? f?.title : "No title"}
+                            </div>
+                          </div>
+                          <div className="text-[12px] p-1 px-2 rounded-full bg-[#2a9d9083] text-white ">
+                            {f?.analytics?.length > 0
+                              ? (() => {
+                                  const latest =
+                                    f.analytics[f.analytics.length - 1] || {};
+
+                                  const engagementRate =
+                                    (((latest?.views || 0) +
+                                      (latest?.shares || 0) +
+                                      (latest?.clicks || 0)) /
+                                      (100 + (latest?.impressions || 0))) *
+                                    100;
+
+                                  return engagementRate.toFixed(1) + "%"; // Display with 2 decimal places
+                                })()
+                              : "N/A"}
+                          </div>
+                        </div>
+                      )
+                  )
+                ) : topicId === "" ? (
+                  <div className="text-black text-[12px] text-center">
+                    Click on above topic to see posts
                   </div>
-                  <div className="text-[12px] p-1 px-2 rounded-full bg-[#2a9d9083] text-white">
-                    41%
+                ) : (
+                  <div className="text-black text-[12px] text-center">
+                    No Posts Available
                   </div>
-                </div>
-                <div className="gap-2 w-full h-[50px] border-b flex items-center justify-between">
-                  <div className="flex gap-2 items-center">
-                    <div className="h-[40px] w-[40px] border"></div>
-                    <div>post name</div>
-                  </div>
-                  <div className="text-[12px] p-1 px-2 rounded-full bg-[#2a9d9083] text-white">
-                    41%
-                  </div>
-                </div>
-                <div className="gap-2 w-full h-[50px] border-b flex items-center justify-between">
-                  <div className="flex gap-2 items-center">
-                    <div className="h-[40px] w-[40px] border"></div>
-                    <div>post name</div>
-                  </div>
-                  <div className="text-[12px] p-1 px-2 rounded-full bg-[#2a9d9083] text-white">
-                    41%
-                  </div>
-                </div>{" "}
-                <div className="gap-2 w-full h-[50px] border-b flex items-center justify-between">
-                  <div className="flex gap-2 items-center">
-                    <div className="h-[40px] w-[40px] border"></div>
-                    <div>post name</div>
-                  </div>
-                  <div className="text-[12px] p-1 px-2 rounded-full bg-[#2a9d9083] text-white">
-                    41%
-                  </div>
-                </div>{" "}
-                <div className="gap-2 w-full h-[50px] border-b flex items-center justify-between">
-                  <div className="flex gap-2 items-center">
-                    <div className="h-[40px] w-[40px] border"></div>
-                    <div>post name</div>
-                  </div>
-                  <div className="text-[12px] p-1 px-2 rounded-full bg-[#2a9d9083] text-white">
-                    41%
-                  </div>
-                </div>{" "}
-                <div className="gap-2 w-full h-[50px] border-b flex items-center justify-between">
-                  <div className="flex gap-2 items-center">
-                    <div className="h-[40px] w-[40px] border"></div>
-                    <div>post name</div>
-                  </div>
-                  <div className="text-[12px] p-1 px-2 rounded-full bg-[#2a9d9083] text-white">
-                    41%
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
-          <div className="h-full w-[70%] pn:max-sm:w-full pn:max-sm:h-full sm:overflow-auto  space-y-2">
-            <div className="h-full w-full relative bg-white overflow-hidden border rounded-2xl">
-              <Card className="h-[calc(100%-100px)] w-full shadow-none  border-none">
-                <div className="flex flex-col items-stretch space-y-0 border-b p-0 sm:flex-row">
-                  <div className="flex flex-1 flex-col justify-center gap-1 px-6 py-5 sm:py-6"></div>
-                  <div className="flex">
-                    {["desktop", "mobile"].map((key) => {
-                      const chart = key as keyof typeof chartConfig;
-                      return (
-                        <button
-                          key={chart}
-                          data-active={activeChart === chart}
-                          className="relative z-30 flex flex-1 flex-col justify-center gap-1 border-t px-6 py-4 text-left even:border-l data-[active=true]:bg-muted/50 sm:border-l sm:border-t-0 sm:px-8 sm:py-6"
-                          onClick={() => setActiveChart(chart)}
-                        >
-                          <span className="text-xs text-muted-foreground">
-                            {chartConfig[chart].label}
-                          </span>
-                          <span className="text-lg font-bold leading-none sm:text-3xl">
-                            {total[key as keyof typeof total].toLocaleString()}
-                          </span>
-                        </button>
-                      );
-                    })}
+          <div className="h-full w-[70%] pn:max-sm:w-full   pn:max-sm:h-full sm:overflow-auto  space-y-2">
+            {/* header  */}
+            <div className="h-[50px] bg-white rounded-xl border px-2 flex items-center justify-center w-full font-semibold">
+              <div>{currentAnalyt}</div>
+            </div>
+
+            <div className="h-[calc(100%-60px)] bg-white  w-full relative  overflow-hidden border rounded-2xl">
+              {currentAnalyt === "Community Analytics" ? (
+                <Card className="h-[calc(100%-100px)] w-full shadow-none  border-none">
+                  <div className="flex flex-col items-stretch space-y-0 border-b p-0 sm:flex-row">
+                    <div className="flex flex-1 flex-col justify-center gap-1 px-6 py-5 sm:py-6"></div>
+                    <div className="flex">
+                      {["new_member", "Active_member"].map((key) => {
+                        const chart = key as keyof typeof chartConfig;
+                        return (
+                          <button
+                            key={chart}
+                            data-active={activeChart === chart}
+                            className="relative z-30 flex flex-1 flex-col justify-center gap-1 border-t px-6 py-4 text-left even:border-l data-[active=true]:bg-muted/50 sm:border-l sm:border-t-0 sm:px-8 sm:py-6"
+                            onClick={() => setActiveChart(chart)}
+                          >
+                            <span className="text-xs text-muted-foreground">
+                              {chartConfig[chart].label}
+                            </span>
+                            <span className="text-lg font-bold leading-none sm:text-3xl">
+                              {total[
+                                key as keyof typeof total
+                              ].toLocaleString()}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-                <CardContent className="px-2 h-full ">
-                  <ChartContainer
-                    config={chartConfig}
-                    className="aspect-auto h-full w-full"
-                  >
-                    <BarChart
-                      accessibilityLayer
-                      data={chartData}
-                      margin={{
-                        left: 12,
-                        right: 12,
-                      }}
+                  <CardContent className="px-2 h-full ">
+                    <ChartContainer
+                      config={chartConfig}
+                      className="aspect-auto h-full w-full"
                     >
-                      <CartesianGrid vertical={false} />
-                      <XAxis
-                        dataKey="date"
-                        tickLine={false}
-                        axisLine={false}
-                        tickMargin={8}
-                        minTickGap={32}
-                        tickFormatter={(value) => {
-                          const date = new Date(value);
-                          return date.toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                          });
+                      <BarChart
+                        accessibilityLayer
+                        data={chartData}
+                        margin={{
+                          left: 12,
+                          right: 12,
                         }}
-                      />
-                      <ChartTooltip
-                        content={
-                          <ChartTooltipContent
-                            className="w-[150px]"
-                            nameKey="views"
-                            labelFormatter={(value) => {
-                              return new Date(value).toLocaleDateString(
-                                "en-US",
-                                {
-                                  month: "short",
-                                  day: "numeric",
-                                  year: "numeric",
-                                }
-                              );
-                            }}
-                          />
-                        }
-                      />
-                      <Bar
-                        dataKey={activeChart}
-                        fill={`var(--color-${activeChart})`}
-                      />
-                      <Bar dataKey="mobile" fill="var(--color-mobile)" />
-                    </BarChart>
-                  </ChartContainer>
-                </CardContent>
-              </Card>
+                      >
+                        <CartesianGrid vertical={false} />
+                        <XAxis
+                          dataKey="date"
+                          tickLine={false}
+                          axisLine={false}
+                          tickMargin={8}
+                          minTickGap={32}
+                          tickFormatter={(value) => {
+                            const date = new Date(value);
+                            return date.toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                            });
+                          }}
+                        />
+                        <ChartTooltip
+                          content={
+                            <ChartTooltipContent
+                              className="w-[150px]"
+                              nameKey="views"
+                              labelFormatter={(value) => {
+                                return new Date(value).toLocaleDateString(
+                                  "en-US",
+                                  {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                  }
+                                );
+                              }}
+                            />
+                          }
+                        />
+                        <Bar
+                          dataKey={activeChart}
+                          fill={`var(--color-${activeChart})`}
+                        />
+                        <Bar dataKey="mobile" fill="var(--color-mobile)" />
+                      </BarChart>
+                    </ChartContainer>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="mt-4 h-[400px] w-full">
+                  {/* <CardHeader>
+            <CardTitle>Line Chart - Multiple</CardTitle>
+            <CardDescription>January - June 2024</CardDescription>
+          </CardHeader> */}
+                  <CardContent className="h-full w-full rounded-3xl">
+                    <ChartContainer
+                      className="h-full w-full rounded-3xl"
+                      config={chartConfig}
+                    >
+                      <LineChart
+                        data={postAnalyt}
+                        accessibilityLayer
+                        margin={{
+                          left: 12,
+                          right: 12,
+                        }}
+                        className=" h-full w-full flex items-center"
+                      >
+                        <CartesianGrid
+                          className="h-full w-full"
+                          vertical={true}
+                          horizontal={true}
+                          // height={100}
+                        />
+                        <XAxis
+                          // height={100}
+                          className="h-full w-full"
+                          dataKey="date"
+                          tickLine={true}
+                          axisLine={true}
+                          tickMargin={8}
+                          tickFormatter={(value) =>
+                            new Date(value).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "2-digit",
+                            })
+                          }
+                        />
+                        <YAxis
+                          height={100}
+                          className="h-full w-full"
+                          tickLine={true}
+                          axisLine={true}
+                          tickMargin={8}
+                          tickFormatter={(value) => value.toLocaleString()}
+                        />
+                        <ChartTooltip
+                          cursor={false}
+                          content={<ChartTooltipContent />}
+                        />
+                        <Line
+                          dataKey="impressions"
+                          type="monotone"
+                          stroke="yellow"
+                          strokeWidth={2}
+                          dot={false}
+                        />
+                        <Line
+                          dataKey="views"
+                          type="monotone"
+                          stroke="blue"
+                          strokeWidth={2}
+                          dot={true}
+                        />
+                        <Line
+                          dataKey="shares"
+                          type="monotone"
+                          stroke="green"
+                          strokeWidth={2}
+                          dot={true}
+                        />
+                        <Line
+                          dataKey="clicks"
+                          type="monotone"
+                          stroke="orange"
+                          strokeWidth={2}
+                          dot={true}
+                        />
+                      </LineChart>
+                    </ChartContainer>
+                  </CardContent>
+                </Card>
+              )}
             </div>
             {/* <div className="h-[60px] w-full bg-white border rounded-2xl px-2 flex items-center justify-between">
               <div className="p-1 px-2 h-fit font-semibold text-[#1d1d1d] ">
@@ -424,317 +749,6 @@ const Page = ({ UserId }: { UserId: string }) => {
             <div className="h-[500px] w-full  rounded-2xl">
               <Post />
             </div> */}
-          </div>
-        </div>
-      ) : null}
-      {click === 1 ? (
-        <div className="w-full h-[calc(100%-60px)] pn:max-sm:flex-col  pn:max-sm:p-2 flex gap-2 ">
-          <div className=" p-2 w-[30%] rounded-3xl pn:max-sm:h-full pn:max-sm:w-full border space-y-1 bg-white">
-            <div className="flex gap-2 flex-col sm:h-[250px] w-full justify-between items-center">
-              <div className="flex w-full h-full gap-2 items-center">
-                {/* data 1 */}
-                <div className="border w-full rounded-2xl h-[100%] space-y-2 flex justify-between flex-col p-2 bg-white">
-                  <div className="rounded-full bg-green-100 w-10 h-10 flex justify-center items-center">
-                    <PiClipboardText className="text-green-600 text-[25px]" />
-                  </div>
-                  <div>
-                    <div className="text-[#667085] font-semibold">Earnings</div>
-                    <div className="text-[18px]">₹1,298</div>
-                  </div>
-                </div>
-                {/* data 2 */}
-                <div className="border w-full bg-white rounded-2xl space-y-2 flex justify-between flex-col h-[100%] p-2">
-                  <div className="rounded-full bg-purple-100 w-10 h-10 flex justify-center items-center">
-                    <BsPeople className="text-purple-600 text-[25px]" />
-                  </div>
-                  <div>
-                    <div className=" text-[#667085] font-semibold">
-                      Customers
-                    </div>
-                    <div className="text-[20px]">298</div>
-                  </div>
-                </div>
-              </div>
-              {/* data 3 */}
-              <div className="border w-full bg-white rounded-t-2xl space-y-2 flex justify-between flex-col h-[100%] p-2">
-                <div className="rounded-full bg-blue-100 w-10 h-10 flex justify-center items-center">
-                  <FiShoppingBag className="text-blue-600 text-[25px]" />
-                </div>
-                <div className="flex bg-white gap-1 justify-between ">
-                  <div className=" ">
-                    <div className="text-[#667085] font-semibold">
-                      All orders
-                    </div>
-                    <div className="text-center">0</div>
-                  </div>
-                  <div className=" ">
-                    <div className="text-[#667085] font-semibold">Pending</div>
-                    <div className="text-center">0</div>
-                  </div>
-                  <div className=" ">
-                    <div className="text-[#667085] font-semibold">
-                      Completed
-                    </div>
-                    <div className="text-center">0</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="h-[calc(100%-255px)] w-full border rounded-b-2xl">
-              <div className="flex h-[40px] border-b justify-between items-center">
-                <div className="p-1 px-2 rounded-xl text-[14px]">Product</div>
-                <div className="p-1 px-2 rounded-xl flex items-center text-blue-500 cursor-pointer select-none hover:text-blue-600 hover:text-[14px] duration-100 hover:underline font-semibold text-[12px]">
-                  Track Orders <FaAnglesRight />
-                </div>
-              </div>
-              <div className="h-[calc(100%-40px)] p-1 w-full  overflow-auto">
-                {/* post  */}
-                <div className="gap-2 w-full h-[50px] border-b flex items-center justify-between">
-                  <div className="flex gap-2 items-center">
-                    <div className="h-[40px] w-[40px] border"></div>
-                    <div>product name</div>
-                  </div>
-                  <div className="text-[12px] p-1 px-2 rounded-full bg-[#2a9d9083] text-white">
-                    41%
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="h-full w-[70%]  pn:max-sm:h-full  pn:max-sm:w-full sm:overflow-auto space-y-2">
-            <div className="h-full w-full relative bg-white overflow-hidden border rounded-2xl">
-              <Card className="h-[calc(100%-100px)] w-full shadow-none  border-none">
-                <div className="flex flex-col items-stretch space-y-0 border-b p-0 sm:flex-row">
-                  <div className="flex flex-1 flex-col justify-center gap-1 px-6 py-5 sm:py-6"></div>
-                  <div className="flex">
-                    {["desktop", "mobile"].map((key) => {
-                      const chart = key as keyof typeof chartConfig;
-                      return (
-                        <button
-                          key={chart}
-                          data-active={activeChart === chart}
-                          className="relative z-30 flex flex-1 flex-col justify-center gap-1 border-t px-6 py-4 text-left even:border-l data-[active=true]:bg-muted/50 sm:border-l sm:border-t-0 sm:px-8 sm:py-6"
-                          onClick={() => setActiveChart(chart)}
-                        >
-                          <span className="text-xs text-muted-foreground">
-                            {chartConfig[chart].label}
-                          </span>
-                          <span className="text-lg font-bold leading-none sm:text-3xl">
-                            {total[key as keyof typeof total].toLocaleString()}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-                <CardContent className="px-2 h-full ">
-                  <ChartContainer
-                    config={chartConfig}
-                    className="aspect-auto h-full w-full"
-                  >
-                    <BarChart
-                      accessibilityLayer
-                      data={chartData}
-                      margin={{
-                        left: 12,
-                        right: 12,
-                      }}
-                    >
-                      <CartesianGrid vertical={false} />
-                      <XAxis
-                        dataKey="date"
-                        tickLine={false}
-                        axisLine={false}
-                        tickMargin={8}
-                        minTickGap={32}
-                        tickFormatter={(value) => {
-                          const date = new Date(value);
-                          return date.toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                          });
-                        }}
-                      />
-                      <ChartTooltip
-                        content={
-                          <ChartTooltipContent
-                            className="w-[150px]"
-                            nameKey="views"
-                            labelFormatter={(value) => {
-                              return new Date(value).toLocaleDateString(
-                                "en-US",
-                                {
-                                  month: "short",
-                                  day: "numeric",
-                                  year: "numeric",
-                                }
-                              );
-                            }}
-                          />
-                        }
-                      />
-                      <Bar
-                        dataKey={activeChart}
-                        fill={`var(--color-${activeChart})`}
-                      />
-                      <Bar dataKey="mobile" fill="var(--color-mobile)" />
-                    </BarChart>
-                  </ChartContainer>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-      ) : null}
-      {click === 2 ? (
-        <div className="w-full h-[calc(100%-60px)]   pn:max-sm:overflow-auto pn:max-sm:p-2 flex flex-col gap-2 ">
-          <div className="flex gap-2 pn:max-sm:flex-col w-full justify-between items-center">
-            {/* <div className="flex w-full h-full gap-2 items-center"> */}
-            {/* data 1 */}
-            <div className="border w-full rounded-2xl h-[100%] space-y-2 flex gap-2 items-center p-2 bg-white">
-              <div className="rounded-full bg-green-100 w-10 h-10 flex justify-center items-center">
-                <PiClipboardText className="text-green-600 text-[25px]" />
-              </div>
-              <div>
-                <div className="text-[#667085] font-semibold">Earnings</div>
-                <div className="text-[18px]">₹1,298</div>
-              </div>
-            </div>
-            {/* data 2 */}
-            <div className="border w-full bg-white rounded-2xl space-y-2 flex gap-2 items-center h-[100%] p-2">
-              <div className="rounded-full bg-purple-100 w-10 h-10 flex justify-center items-center">
-                <BsPeople className="text-purple-600 text-[25px]" />
-              </div>
-              <div>
-                <div className=" text-[#667085] font-semibold">Customers</div>
-                <div className="text-[20px]">298</div>
-              </div>
-            </div>
-            {/* data 3 */}
-            <div className="border w-full bg-white rounded-2xl space-y-2 flex gap-2 items-center h-[100%] p-2">
-              <div className="rounded-full bg-blue-100 w-10 h-10 flex justify-center items-center">
-                <FiShoppingBag className="text-blue-600 text-[25px]" />
-              </div>
-              <div>
-                <div className=" text-[#667085] font-semibold">Customers</div>
-                <div className="text-[20px]">298</div>
-              </div>
-            </div>
-          </div>
-          <div className="flex gap-2  pn:max-sm:flex-col w-full">
-            <div className="h-full w-[70%]  pn:max-sm:w-full sm:overflow-auto space-y-2">
-              <div className="h-full w-full relative bg-white p-2 border rounded-2xl">
-                <Card className="h-full w-full shadow-none p-2 border-none">
-                  <CardContent className="h-full w-full">
-                    <ChartContainer
-                      className="h-full w-full "
-                      config={chartConfig}
-                    >
-                      <LineChart
-                        data={chartData}
-                        margin={{
-                          top: 20,
-                          left: 12,
-                          right: 12,
-                        }}
-                      >
-                        <CartesianGrid vertical={false} />
-                        <XAxis
-                          dataKey="month"
-                          tickLine={false}
-                          axisLine={false}
-                          tickMargin={8}
-                          tickFormatter={(value) => value.slice(0, 3)}
-                        />
-                        <ChartTooltip
-                          cursor={false}
-                          content={<ChartTooltipContent indicator="line" />}
-                        />
-                        <Line
-                          dataKey="desktop"
-                          type="natural"
-                          stroke="var(--color-desktop)"
-                          strokeWidth={2}
-                          dot={{
-                            fill: "var(--color-desktop)",
-                          }}
-                          activeDot={{
-                            r: 6,
-                          }}
-                        >
-                          <LabelList
-                            position="top"
-                            offset={12}
-                            className="fill-foreground"
-                            fontSize={12}
-                          />
-                        </Line>
-                      </LineChart>
-                    </ChartContainer>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-            <div className=" p-2 w-[30%] h-full rounded-3xl  pn:max-sm:w-full border bg-white">
-              <div className=" w-full border rounded-3xl">
-                <Card className="flex h-full flex-col shadow-none p-2 border-none rounded-3xl">
-                  <CardContent className="flex h-full flex-1 items-center pb-0">
-                    <ChartContainer
-                      config={chartConfiges}
-                      className="mx-auto aspect-square max-h-[250px]"
-                    >
-                      <PieChart>
-                        <ChartTooltip
-                          cursor={false}
-                          content={<ChartTooltipContent hideLabel />}
-                        />
-                        <Pie
-                          data={chartDataes}
-                          dataKey="visitors"
-                          nameKey="browser"
-                          innerRadius={60}
-                          strokeWidth={5}
-                        >
-                          <Label
-                            content={({ viewBox }) => {
-                              if (
-                                viewBox &&
-                                "cx" in viewBox &&
-                                "cy" in viewBox
-                              ) {
-                                return (
-                                  <text
-                                    x={viewBox.cx}
-                                    y={viewBox.cy}
-                                    textAnchor="middle"
-                                    dominantBaseline="middle"
-                                  >
-                                    <tspan
-                                      x={viewBox.cx}
-                                      y={viewBox.cy}
-                                      className="fill-foreground text-3xl font-bold"
-                                    >
-                                      {totalVisitors.toLocaleString()}
-                                    </tspan>
-                                    <tspan
-                                      x={viewBox.cx}
-                                      y={(viewBox.cy || 0) + 24}
-                                      className="fill-muted-foreground"
-                                    >
-                                      Visitors
-                                    </tspan>
-                                  </text>
-                                );
-                              }
-                            }}
-                          />
-                        </Pie>
-                      </PieChart>
-                    </ChartContainer>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
           </div>
         </div>
       ) : null}

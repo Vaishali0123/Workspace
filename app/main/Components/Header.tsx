@@ -1,16 +1,8 @@
 "use client";
-import { useAuthContext } from "@/app/Auth/Components/auth";
-import { setCollection } from "@/app/redux/slices/collectionSlice";
-import { setIfCode } from "@/app/redux/slices/userSlice";
-import { RootState } from "@/app/redux/store";
-import { API } from "@/app/utils/helpers";
-import axios from "axios";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import React, { useState, createContext, useContext, useEffect } from "react";
-import toast, { Toaster } from "react-hot-toast";
+import React, { useState } from "react";
+import { Toaster } from "react-hot-toast";
 import { LuCircleCheckBig } from "react-icons/lu";
-import { useDispatch, useSelector } from "react-redux";
 
 interface HeaderProps {
   path: string;
@@ -21,54 +13,21 @@ interface HeaderProps {
   };
 }
 
-interface DetectErrorParams {
-  e: any;
-}
-const CommunityContext = createContext({
-  comId: "",
-  setComId: (id: string) => {},
-});
-
-// Custom Hook to use Community Context
-export const useCommunity = () => useContext(CommunityContext);
 const Header: React.FC<HeaderProps> = ({ path, data }) => {
-  const router = useRouter();
   const [pop, setPop] = useState(false);
-  const [pincode, setPincode] = useState("");
-  const [city, setCity] = useState("");
-  const [state, setState] = useState("");
-  const [pinload, setPinload] = useState(false);
-  const [load, setLoad] = useState(false);
-  const [houseNo, setHouseNo] = useState("");
-  const [landmark, setLandmark] = useState("");
-  const [gst, setGst] = useState("");
-  const dispatch = useDispatch();
-  const [comId, setComId] = useState("");
-  interface CommunityData {
-    _id: string;
-    communityName: string;
-    dp: string;
-    dps: string;
-    topic: { nature: string }[];
-    postcount: number;
-    memberCount: number;
-  }
 
-  const [loading, setLoading] = useState<boolean>(false);
-  const [memdetails, setMemdetails] = useState();
-
-  const detecterror = ({ e }: DetectErrorParams) => {
-    if (e.response) {
-      console.log(e.response.data);
-      console.log(e.response.status);
-      console.log(e.response.headers);
-    } else if (e.request) {
-      console.log(e.request);
-    } else {
-      console.log("Error", e.message);
-    }
-    console.log(e.config);
-  };
+  // const detecterror = ({ e }: DetectErrorParams) => {
+  //   if (e.response) {
+  //     console.log(e.response.data);
+  //     console.log(e.response.status);
+  //     console.log(e.response.headers);
+  //   } else if (e.request) {
+  //     console.log(e.request);
+  //   } else {
+  //     console.log("Error", e.message);
+  //   }
+  //   console.log(e.config);
+  // };
 
   return (
     <>
@@ -246,7 +205,7 @@ const Header: React.FC<HeaderProps> = ({ path, data }) => {
                   alt="workspace"
                   width={50}
                   height={50}
-                  className="rounded-full pn:max-sm:hidden object-cover w-full h-full"
+                  className="rounded-[20px] pn:max-sm:hidden object-cover w-full h-full"
                 />
               </div>
             </div>

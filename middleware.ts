@@ -28,6 +28,11 @@ export const config = {
   matcher: [
     "/",
     "/Auth",
+    "/home",
+    // "/",
+    "/main",
+    "/main/:path*",
+
     // "/main/:Overview*",
     // "/main/:Community*",
     // "/main/:SetUp*",

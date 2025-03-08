@@ -4,18 +4,37 @@ import { toast } from "react-hot-toast";
 
 declare global {
   interface Window {
-    OTPlessSignin: any;
-    ReactNativeWebView: any;
+    OTPlessSignin: OTPless | undefined;
+    // ReactNativeWebView: any;
   }
 }
+interface UserInfo {
+  identities: Identity[];
+  token: string;
+}
+interface Identity {
+  identityType: string;
+  identityValue: string;
+}
 declare class OTPless {
-  constructor(callback: any);
-  initiate(options: any): any;
-  verify(options: any): any;
+  constructor(callback: (userinfo: UserInfo) => void);
+  initiate(options: {
+    channel: string;
+    phone?: string;
+    email?: string;
+    countryCode: string;
+  }): Promise<void>;
+  verify(options: {
+    channel: string;
+    phone?: string;
+    email?: string;
+    otp: string;
+    countryCode: string;
+  }): Promise<boolean>;
 }
 
 // Initialize OTPless
-export const initOTPless = (callback: any) => {
+export const initOTPless = (callback: (userinfo: UserInfo) => void) => {
   const otplessInit = Reflect.get(window, "otplessInit");
 
   const loadScript = () => {
@@ -97,12 +116,8 @@ export const verifyOTP = async (number: string, otp: string) => {
       toast.error("OTP Verification Failed");
       return false;
     }
-  } catch (error: Error | any) {
-    console.error(
-      "OTP Verification Error: ",
-      error.message,
-      error.response || error
-    );
+  } catch (error: unknown) {
+    console.error("OTP Verification Error: ", error);
     toast.error("An error occurred during OTP verification");
   } finally {
   }
@@ -156,21 +171,17 @@ export const verifyEmailOTP = async (email: string, otp: string) => {
       toast.error("OTP Verification Failed");
       return false;
     }
-  } catch (error: Error | any) {
-    console.error(
-      "OTP Verification Error: ",
-      error.message,
-      error.response || error
-    );
+  } catch (error: unknown) {
+    console.error("OTP Verification Error: ", error);
     toast.error("An error occurred during OTP verification");
   } finally {
   }
 };
 
 // Callback function for OTPless
-export const callback = (userinfo: any) => {
+export const callback = (userinfo: UserInfo) => {
   const mobileMap = userinfo?.identities.find(
-    (item: any) => item.identityType === "MOBILE"
+    (item: Identity) => item.identityType === "MOBILE"
   )?.identityValue;
 
   const token = userinfo?.token;

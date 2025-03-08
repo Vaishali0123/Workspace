@@ -8,7 +8,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { API } from "../../utils/helpers";
@@ -61,7 +61,6 @@ export const AuthContextProvider = ({
 
   const sendTokenAndVerify = useCallback(async () => {
     try {
-      console.log("render");
       const token = Cookies.get("token");
 
       if (!token) {
@@ -80,8 +79,11 @@ export const AuthContextProvider = ({
       } else {
         deleteToken();
       }
-    } catch (error: Error | any) {
-      if (error.response?.data?.error === "Token expired") {
+    } catch (error: unknown) {
+      if (
+        error instanceof AxiosError &&
+        error.response?.data?.error === "Token expired"
+      ) {
         toast.error(error.response.data.message);
       }
       setLoading(false);
