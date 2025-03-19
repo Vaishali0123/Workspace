@@ -1,7 +1,7 @@
 "use client";
 import { API } from "@/app/utils/helpers";
 import axios from "axios";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuthContext } from "@/app/Auth/Components/auth";
 import { HiOutlineLockClosed } from "react-icons/hi";
 import toast from "react-hot-toast";
@@ -21,7 +21,12 @@ const Page = () => {
   const [communityCategory, setCommunityCategory] = useState<string>("");
   const [communityType, setCommunityType] = useState<string>("public");
   const [communityImage, setCommunityImage] = useState<File | null>(null);
+  const [isClient, setIsClient] = useState(false);
 
+  // Set `isClient` to true after component mounts
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
   const [loading, setLoading] = useState(false);
   const { data } = useAuthContext();
   const userId = data?.id;
@@ -81,15 +86,17 @@ const Page = () => {
 
   // const [comImage, setComImage] = useState<File | null>(null);
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith("image/")) {
-        toast.error("Only image files are allowed!");
-        return;
-      }
+    if (typeof window !== "undefined") {
+      const file = e.target.files?.[0];
+      if (file) {
+        if (!file.type.startsWith("image/")) {
+          toast.error("Only image files are allowed!");
+          return;
+        }
 
-      // setComImage(file);
-      setCommunityImage(file);
+        // setComImage(file);
+        setCommunityImage(file);
+      }
     }
   };
 
@@ -180,7 +187,7 @@ const Page = () => {
         <div className="p-4  ">
           <div className="py-2  flex-col flex w-full items-center gap-2 justify-center font-semibold text-[12px]">
             <div className="h-[80px] w-[80px] border bg-white rounded-[32px] ">
-              {communityImage instanceof File && (
+              {isClient && communityImage instanceof File && (
                 <img
                   src={URL.createObjectURL(communityImage)}
                   alt="Community Logo"

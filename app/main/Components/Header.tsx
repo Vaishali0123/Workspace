@@ -84,13 +84,13 @@ const Header: React.FC<HeaderProps> = ({ path, data }) => {
               Hey, {data?.fullname}
             </div>
             <div className="flex h-[40px] w-[40px] items-center justify-center border border-dashed rounded-2xl">
-              <div className="flex h-[38px] w-[38px] items-center justify-center bg-slate-500 rounded-2xl">
+              <div className="flex h-[38px] w-[38px] items-center justify-center bg-slate-500 rounded-[15.2px]">
                 <img
                   src={data?.dp ? data?.dp : ""}
                   alt="workspace"
                   width={50}
                   height={50}
-                  className="rounded-full pn:max-sm:hidden object-cover w-full h-full"
+                  className="rounded-full  object-cover w-full h-full"
                 />
               </div>
             </div>

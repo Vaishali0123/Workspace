@@ -6,6 +6,7 @@ import collectionSlice from "./slices/collectionSlice";
 import { settingsApi } from "./slices/settingApi";
 import { earnwithusApi } from "./slices/earnwithusApi";
 import { fetchComApi } from "./slices/comSlice";
+import paramsSlice from "./slices/leastparams";
 
 // Automatically adds the thunk middleware and the Redux DevTools extension
 const store = configureStore({
@@ -14,7 +15,7 @@ const store = configureStore({
     createproduct: productSlice,
     createcommunity: communitySlice,
     collection: collectionSlice,
-
+    paramslice: paramsSlice,
     [settingsApi.reducerPath]: settingsApi.reducer,
     [earnwithusApi.reducerPath]: earnwithusApi.reducer,
     [fetchComApi.reducerPath]: fetchComApi.reducer,

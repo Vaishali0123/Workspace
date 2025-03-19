@@ -128,14 +128,7 @@ const Navbar = ({ path }: { path: string }) => {
               </div>
             </Link>
             <Link
-              href={{
-                pathname: "/main/Store",
-                query: {
-                  userId: userId,
-                  isStoreVerified: data?.isStoreVerified,
-                  storeid: data?.storeid,
-                },
-              }}
+              href={"/main/Store"}
               className={`sm:w-full rounded-2xl duration-100 pn:max-md:flex-col hover:bg-slate-50 sm:py-2 pn:max-sm:h-[40px] pn:max-sm:w-[40px] md:pl-4 items-center pn:max-sm:text-[10px] pn:max-sm:flex-col flex gap-1 sm:gap-2 ${
                 path === "/main/Store"
                   ? "sm:bg-[#3388ff12] sm:border sm:border-[#3388ff] text-[#3388ff]"

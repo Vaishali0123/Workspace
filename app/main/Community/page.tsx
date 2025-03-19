@@ -428,7 +428,7 @@ const PageContent = () => {
                 </div>
               </div>
             </>
-          ) : (
+          ) : data?.data?.comdata?.length > 0 ? (
             data?.data?.comdata?.map((d: CommunityData, i: number) => (
               <div
                 key={i}
@@ -535,6 +535,13 @@ const PageContent = () => {
                 ) : null}
               </div>
             ))
+          ) : (
+            <div className="w-full flex flex-col h-full gap-2 justify-center items-center">
+              <div className="text-slate-500 font-semibold">
+                {" "}
+                No Community Created
+              </div>
+            </div>
           )}
         </div>
       </div>

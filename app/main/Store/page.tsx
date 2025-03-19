@@ -11,12 +11,13 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { IoStorefrontOutline } from "react-icons/io5";
 import { RiLoader2Line } from "react-icons/ri";
-import { FaAsterisk, FaPlus } from "react-icons/fa6";
+import { FaAsterisk, FaCircleCheck, FaPlus } from "react-icons/fa6";
 import toast from "react-hot-toast";
 import { setIfCode } from "@/app/redux/slices/userSlice";
 import { LuCircleCheckBig } from "react-icons/lu";
-import { useSearchParams } from "next/navigation";
 import { useFetchEarnWithUsQuery } from "@/app/redux/slices/earnwithusApi";
+import { MdPendingActions } from "react-icons/md";
+import { useAuthContext } from "@/app/Auth/Components/auth";
 
 interface Products {
   name: string;
@@ -108,11 +109,10 @@ const PageContent = () => {
   const dispatch = useDispatch();
   const [collpopup, setCollpopup] = useState(false);
   const [collectionData, setCollectionData] = useState([]);
-  const searchParams = useSearchParams();
-
-  const userId = searchParams.get("userId");
-  const isStoreVerified = searchParams.get("isStoreVerified");
-  const storeid = searchParams.get("storeid");
+  const { data: authdata } = useAuthContext();
+  const userId = authdata?.id;
+  const isStoreVerified = authdata?.isStoreVerified;
+  const storeid = authdata?.storeid;
   const [shouldSkip, setShouldSkip] = useState(false);
   const { data, isLoading } = useFetchEarnWithUsQuery(userId, {
     skip: !!shouldSkip,
@@ -541,20 +541,28 @@ const PageContent = () => {
               </div>
             </div>
             {/* data 3 */}
-            <div className="border w-full bg-white rounded-2xl space-y-2 flex justify-between flex-col h-[100%] p-2">
-              <div className="rounded-full bg-blue-100 w-10 h-10 flex justify-center items-center">
-                <FiShoppingBag className="text-blue-600 text-[25px]" />
-              </div>
-              <div className="flex bg-white gap-1 justify-between ">
-                <div className=" ">
+            <div className="border w-full bg-white rounded-2xl space-y-2 flex justify-center items-center flex-col h-[100%] p-2">
+              {/* <div className="flex justify-between  gap-1 "></div> */}
+
+              <div className="flex  gap-1 w-[100%] justify-between ">
+                <div className="  flex flex-col items-center ">
+                  <div className="rounded-full bg-blue-100 w-10 h-10 flex justify-center items-center">
+                    <FiShoppingBag className="text-blue-600 text-[25px]" />
+                  </div>
                   <div className="text-[#667085] font-semibold">All orders</div>
                   <div className="text-center">0</div>
                 </div>
-                <div className=" ">
+                <div className="flex flex-col items-center ">
+                  <div className="rounded-full bg-red-100 w-10 h-10 flex justify-center items-center">
+                    <MdPendingActions className="text-red-600 text-[25px]" />
+                  </div>
                   <div className="text-[#667085] font-semibold">Pending</div>
                   <div className="text-center">0</div>
                 </div>
-                <div className=" ">
+                <div className=" flex flex-col items-center">
+                  <div className="rounded-full bg-green-100 w-10 h-10 flex justify-center items-center">
+                    <FaCircleCheck className="text-green-600 text-[25px]" />
+                  </div>
                   <div className="text-[#667085] font-semibold">Completed</div>
                   <div className="text-center">0</div>
                 </div>

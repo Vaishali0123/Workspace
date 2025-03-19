@@ -22,7 +22,7 @@ import EmailInput from "./Components/EmailInput";
 import EmailOtpComponent from "./Components/EmailOtpComponent";
 import MobileInput from "./Components/MobileInput";
 import OtpComponent from "./Components/OtpComponent";
-import Grovyo from "../assets/image/Logo.png";
+
 interface Slide {
   img: StaticImageData;
   msg: string;
@@ -272,19 +272,23 @@ const Page = () => {
           </div>
         </div>
       </div>
-      <div className="w-[50%] h-[100%] relative flex justify-center items-center pn:max-sm:w-[100%] pn:max-sm:h-[100%]">
+      <div className="w-[45%] flex justify-center items-center pn:max-sm:w-full">
+        {/* {children} */}
         <div className=" inset-0 w-full z-50 h-screen flex justify-center items-center ">
-          <div className="w-[50%] h-[85%] flex flex-col p-2 space-y-3 items-center">
+          <div className="w-[50%] h-[85%] justify-center flex flex-col p-2 space-y-3 items-start">
             {/* web Qr  */}
-            <div className="w-[120px] h-[120px] border-dotted border-2 border-[#d9d9d9] bg-[#000] rounded-3xl">
+            {/* <div className="w-[120px] h-[120px] border-dotted border-2 border-[#d9d9d9] bg-[#000] rounded-3xl">
               <Image alt="img" src={Grovyo} className="h-[100%] w-[100%]" />
+            </div> */}
+            <div className="text-[40px] font-extrabold text-[#2c2c2c]">
+              Login
             </div>
             {/* text  */}
             {/* <div className="text-xl font-semibold text-[#2c2c2c]">
               Sign in with QR code
             </div> */}
-            <div className="flex flex-col gap-3 justify-center items-center">
-              {/* <div className="max-w-[70%] text-sm text-[#9095A0] text-center">
+            {/* <div className="flex flex-col gap-3 justify-center items-center"> */}
+            {/* <div className="max-w-[70%] text-sm text-[#9095A0] text-center">
                 Open the{" "}
                 <a
                   className="text-blue-600 cursor-pointer"
@@ -295,17 +299,33 @@ const Page = () => {
                 </a>{" "}
                 app's camera to scan this code and log in instantly.
               </div> */}
-            </div>
+            {/* </div> */}
             {/* web Or Sign in with bar */}
-            <div className="flex pn:max-sm:hidden items-center justify-center w-full">
+            {/* <div className="flex pn:max-sm:hidden items-center justify-center w-full">
               <hr className="flex-grow border-t border-dashed text-[#3b3b3b] border-[#9095A0] " />
               <span className="px-3 text-[12px] font-medium text-[#9095A0] bg-transparent ">
                 Sign in with
               </span>
               <hr className="flex-grow border-t border-dashed text-[#9095A0] border-[#9095A0]" />
+            </div> */}
+            <div className="flex pn:max-sm:hidden w-full">
+              <span className=" text-[16px] font-medium text-[#9095A0] bg-transparent ">
+                &quot;Don’t have an account?
+                <span className="text-blue-500">
+                  <Link
+                    href="https://grovyo.com/auth/signup"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="cursor-pointer"
+                  >
+                    Sign up here
+                  </Link>{" "}
+                </span>
+                &quot;
+              </span>
             </div>
             {/* Switcher */}
-            <div className="grid grid-cols-1 pn:max-sm:-mt-6 w-full md:w-[90%]">
+            <div className="grid grid-cols-1 p-1 relative rounded-2xl bg-slate-50 pn:max-sm:-mt-6 w-full md:w-[100%]">
               <div className="w-full flex rounded-xl text-[#303030] select-none text-[14px]">
                 <div
                   onClick={() => {
@@ -314,14 +334,17 @@ const Page = () => {
                     }
                     setChange(1);
                   }}
-                  className={`m-1 flex justify-center items-center h-full w-full z-10 ${
-                    change === 1
-                      ? "font-bold border-b-2 border-[#0066ff]"
-                      : "cursor-pointer"
+                  className={` p-2 rounded-xl flex justify-center items-center h-full w-full z-10 ${
+                    change === 1 ? "font-bold " : "cursor-pointer"
                   }`}
                 >
                   Phone no.
                 </div>
+                <div
+                  className={`absolute duration-100 top-0.5 w-[150px] h-[90%] rounded-xl bg-slate-100 ${
+                    change === 1 ? "left-[3px] " : " left-[177px]"
+                  }`}
+                ></div>
                 <div
                   onClick={() => {
                     if (showOtp === true) {
@@ -329,16 +352,15 @@ const Page = () => {
                     }
                     setChange(2);
                   }}
-                  className={`m-1 flex justify-center items-center h-full w-full z-10 ${
-                    change === 2
-                      ? "font-bold border-b-2 border-[#0066ff]"
-                      : "cursor-pointer"
+                  className={` p-2 rounded-xl flex justify-center items-center h-full w-full z-10 ${
+                    change === 2 ? "font-bold " : "cursor-pointer"
                   }`}
                 >
                   Email
                 </div>
               </div>
             </div>
+
             {/* phone */}
             <div
               className={`${
