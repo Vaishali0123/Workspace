@@ -6,6 +6,10 @@ import { RiYoutubeLine } from "react-icons/ri";
 import { MdOutlineModeEdit } from "react-icons/md";
 import { useFetchSettingsQuery } from "@/app/redux/slices/settingApi";
 import { useSearchParams } from "next/navigation";
+// import { Cropper } from "react-cropper";
+import axios from "axios";
+import { API } from "@/app/utils/helpers";
+import toast, { Toaster } from "react-hot-toast";
 
 const PageContent = () => {
   const [click, setClick] = useState<number>(0);
@@ -20,6 +24,62 @@ const PageContent = () => {
   const { data, isLoading } = useFetchSettingsQuery(userId, {
     skip: !!shouldSkip,
   });
+  // const [cropData, setCropData] = useState<string>("");
+  // const [showCropper, setShowCropper] = useState<boolean>(false);
+  // const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+  // const cropperRef = React.useRef<HTMLImageElement>(null);
+  // const cropperRef = useRef<HTMLImageElement & { cropper?: Cropper }>(null);
+  const [load, setLoad] = useState<boolean>(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+
+  // const handleCrop = () => {
+  //   // Check if cropperRef.current exists and the cropper is initialized
+  //   if (cropperRef.current && cropperRef.current.cropper) {
+  //     const cropper = cropperRef.current.cropper; // TypeScript knows this is a Cropper instance
+  //     const croppedImage = cropper.getCroppedCanvas().toDataURL(); // Get the cropped image data
+  //     setCropData(croppedImage); // Set cropped image data
+  //     setProfilePic(croppedImage); // Set cropped image as the profile picture
+  //     setShowCropper(false); // Hide the cropper modal
+  //   }
+  // };
+
+  const updatesetting = async () => {
+    setLoad(true);
+    try {
+      const formData = new FormData();
+
+      formData.append("fullname", fullname);
+      formData.append("insta", insta);
+      formData.append("email", email);
+      formData.append("snap", snap);
+      formData.append("x", x);
+      formData.append("linkdin", linkdin);
+      formData.append("yt", yt);
+      formData.append("bio", bio);
+      formData.append("username", username);
+      formData.append("phone", phone);
+      if (imageFile) {
+        formData.append("profilepic", imageFile, imageFile.name);
+      }
+      // if (cropData) {
+      //   const blob = await fetch(cropData).then((res) => res.blob()); // Convert base64 to Blob
+      //   formData.append("profilepic", blob, imageFile?.name);
+      // }
+      const res = await axios.post(`${API}/settings/${userId}`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      console.log(res?.data);
+      if (res?.data?.success) {
+        toast.success("Set Up Updated succesfully!");
+      }
+    } catch (e) {
+      console.log(e);
+      toast.error("Something went wrong");
+    }
+    setLoad(false);
+  };
 
   useEffect(() => {
     if (data) {
@@ -46,57 +106,13 @@ const PageContent = () => {
       reader.onload = () => {
         // setImageToCrop(reader.result as string); // Load the image into the cropper
         // setShowCropper(true); // Show the cropper modal
-        // setImageFile(file);
+        setImageFile(file);
 
         setProfilePic(reader.result as string); // Update the state with the new image URL
       };
       reader.readAsDataURL(file);
     }
   };
-  // const handleCrop = () => {
-  //   // Check if cropperRef.current exists and the cropper is initialized
-  //   if (cropperRef.current && cropperRef.current.cropper) {
-  //     const cropper = cropperRef.current.cropper; // TypeScript knows this is a Cropper instance
-  //     const croppedImage = cropper.getCroppedCanvas().toDataURL(); // Get the cropped image data
-  //     setCropData(croppedImage); // Set cropped image data
-  //     setProfilePic(croppedImage); // Set cropped image as the profile picture
-  //     // setShowCropper(false); // Hide the cropper modal
-  //   }
-  // };
-  // const updatesetting = async () => {
-  //   setLoad(true);
-  //   try {
-  //     const formData = new FormData();
-
-  //     formData.append("fullname", fullname);
-  //     formData.append("insta", insta);
-  //     formData.append("email", email);
-  //     formData.append("snap", snap);
-  //     formData.append("x", x);
-  //     formData.append("linkdin", linkdin);
-  //     formData.append("yt", yt);
-  //     formData.append("bio", bio);
-  //     formData.append("username", username);
-  //     formData.append("phone", phone);
-  //     if (cropData) {
-  //       const blob = await fetch(cropData).then((res) => res.blob());
-  //       formData.append(
-  //         "profilepic",
-  //         blob,
-  //         imageFile?.name ? imageFile?.name : "profilepic.jpg"
-  //       ); // Assuming profilepic.jpg as the filename
-  //     }
-  //     const res = await axios.post(`${API}/settings/${userId}`, formData, {
-  //       headers: {
-  //         "Content-Type": "multipart/form-data",
-  //       },
-  //     });
-  //     console.log(res?.data);
-  //   } catch (e) {
-  //     console.log(e);
-  //   }
-  //   setLoad(false);
-  // };
 
   useEffect(() => {
     if (!isLoading) {
@@ -114,6 +130,7 @@ const PageContent = () => {
   }, [isLoading, data]);
   return (
     <div className="bg-white w-full h-full px-2">
+      <Toaster />
       <div className="h-[50px] w-full border-b items-center px-2 flex gap-4">
         <div
           onClick={() => setClick(0)}
@@ -355,6 +372,25 @@ const PageContent = () => {
       ) : (
         <></>
       )}
+      <div className="flex gap-4 justify-end mt-4">
+        <div
+          className="bg-gray-300 text-gray-800 rounded-xl px-4 py-2"
+          // onClick={handleCancel} // Define your cancel handler
+        >
+          Cancel
+        </div>
+        <div
+          onClick={() => {
+            if (!load) {
+              updatesetting();
+            }
+          }}
+          className="bg-[#307fff] text-white rounded-xl px-4 py-2"
+          // onClick={handleSave} // Define your save handler
+        >
+          {load ? "..." : "Save"}
+        </div>
+      </div>
     </div>
   );
 };

@@ -1,13 +1,29 @@
 "use client";
 import { API } from "@/app/utils/helpers";
 import axios from "axios";
-import React, { Suspense, useState } from "react";
+import React, { Dispatch, SetStateAction, Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { HiOutlineCloudUpload } from "react-icons/hi";
 import { MdAdd } from "react-icons/md";
 import { PiVideoFill } from "react-icons/pi";
 import { RxCross2 } from "react-icons/rx";
-
+import toast, { Toaster } from "react-hot-toast";
+// import { setPost } from "@/app/redux/slices/leastparams";
+// import { useDispatch } from "react-redux";
+interface UploadPostProps {
+  postName: string;
+  postDesc: string;
+  postFiles: File[];
+  tags: string[];
+  userId: string;
+  communityId: string;
+  topicId: string;
+  API: string;
+  setUploadProgress: Dispatch<SetStateAction<number[]>>;
+  setUploadSuccess: Dispatch<SetStateAction<boolean[]>>;
+  setUploadError: Dispatch<SetStateAction<string[]>>;
+  setUploading: Dispatch<SetStateAction<boolean>>;
+}
 const PageContent = () => {
   const [files, setFiles] = useState<File[]>([]);
   const searchParams = useSearchParams();
@@ -51,7 +67,7 @@ const PageContent = () => {
   const removeTag = (index: number) => {
     setTags(tags.filter((_, i) => i !== index));
   };
-  console.log(postFiles, "opo");
+
   // const createPost = async (
   //   postName: string,
   //   postDesc: string,
@@ -149,6 +165,114 @@ const PageContent = () => {
     ]);
   };
 
+  const uploadFilesAndCreatePost = async ({
+    postName,
+    postDesc,
+    postFiles,
+    tags,
+    userId,
+    communityId,
+    topicId,
+    API,
+    setUploadProgress,
+    setUploadSuccess,
+    setUploadError,
+    setUploading,
+  }: UploadPostProps) => {
+    setLoad(true);
+    if (!postFiles.length) {
+      alert("Please select at least one file.");
+      return;
+    }
+
+    setUploading(true);
+    setUploadProgress(Array(postFiles.length).fill(0));
+    setUploadSuccess(Array(postFiles.length).fill(false));
+    setUploadError(Array(postFiles.length).fill(""));
+
+    try {
+      // Step 1: Get Pre-Signed URLs
+      const presignedResponse = await axios.post(
+        `${API}/generate-presigned-url`,
+        {
+          files: postFiles.map((file) => ({
+            name: file.name,
+            type: file.type,
+            size: file.size,
+          })),
+          isVideoFirst: false, // Modify if required
+        }
+      );
+
+      const { presignedUrls, postContent } = presignedResponse.data;
+
+      // Step 2: Upload to S3 using Presigned URLs
+      await Promise.all(
+        postFiles.map(async (file, index) => {
+          try {
+            await axios.put(presignedUrls[index], file, {
+              headers: {
+                "Content-Type": file.type,
+              },
+              onUploadProgress: (progressEvent) => {
+                if (progressEvent?.total) {
+                  setUploadProgress((prev) => {
+                    const updatedProgress = [...prev];
+                    const a = progressEvent?.total ? progressEvent?.total : 1;
+                    updatedProgress[index] = Math.round(
+                      (progressEvent.loaded * 100) / a
+                    );
+                    return updatedProgress;
+                  });
+                }
+              },
+            });
+
+            setUploadSuccess((prev) => {
+              const updatedSuccess = [...prev];
+              updatedSuccess[index] = true;
+              return updatedSuccess;
+            });
+          } catch (uploadError) {
+            console.error("File upload error:", uploadError);
+            setUploadError((prev) => {
+              const updatedErrors = [...prev];
+              updatedErrors[index] = `Failed to upload ${file.name}`;
+              return updatedErrors;
+            });
+          }
+        })
+      );
+
+      // Step 3: Create the Post
+      const postResponse = await axios.post(
+        `${API}/createpost/${userId}/${communityId}/${topicId}`,
+        {
+          title: postName,
+          description: postDesc,
+          tags,
+          postContent,
+        }
+      );
+      if (postResponse?.data?.success) {
+        toast.success("Post created successfully!");
+
+        router.back();
+      }
+    } catch (error) {
+      console.log(error);
+      // if (error?.status === 400) {
+      //   toast.error("Missing required fields");
+      // } else {
+
+      toast.error("Failed to create post!");
+      // }
+    } finally {
+      setUploading(false);
+    }
+    setLoad(false);
+  };
+
   // Upload files
   // const uploadFiles = async () => {
   //   if (!files.length) {
@@ -234,125 +358,126 @@ const PageContent = () => {
   //     setUploading(false);
   //   }
   // };
-  const uploadFilesAndCreatePost = async (
-    postName: string,
-    postDesc: string,
-    postFiles: File[],
-    // selectedFiles: File[],
-    // isVideoFirst: boolean,
-    tags: string[],
-    userId: string,
-    communityId: string,
-    topicId: string,
-    API: string,
-    setUploadProgress: (progress: number[]) => void,
-    setUploadSuccess: (success: boolean[]) => void,
-    setUploadError: (errors: string[]) => void,
-    setUploading: (uploading: boolean) => void
-  ): Promise<void> => {
-    if (!postFiles.length) {
-      alert("Please select at least one file.");
-      return;
-    }
+  // const uploadFilesAndCreatePost = async (
+  //   postName: string,
+  //   postDesc: string,
+  //   postFiles: File[],
+  //   // selectedFiles: File[],
+  //   // isVideoFirst: boolean,
+  //   tags: string[],
+  //   userId: string,
+  //   communityId: string,
+  //   topicId: string,
+  //   API: string,
+  //   setUploadProgress: (progress: number[]) => void,
+  //   setUploadSuccess: (success: boolean[]) => void,
+  //   setUploadError: (errors: string[]) => void,
+  //   setUploading: (uploading: boolean) => void
+  // ): Promise<void> => {
+  //   if (!postFiles.length) {
+  //     alert("Please select at least one file.");
+  //     return;
+  //   }
 
-    setUploading(true);
-    setUploadSuccess(Array(postFiles.length).fill(false));
-    setUploadError(Array(postFiles.length).fill(""));
-    setLoad(true);
-    try {
-      // Step 1: Request Pre-Signed URLs
-      // const response = await axios.post(
-      //   `${API}/createpost/${userId}/${communityId}/${topicId}`,
-      //   {
-      //     files: selectedFiles.map((file) => ({
-      //       name: file.name,
-      //       type: file.type,
-      //       size: file.size,
-      //     })),
+  //   setUploading(true);
+  //   setUploadSuccess(Array(postFiles.length).fill(false));
+  //   setUploadError(Array(postFiles.length).fill(""));
+  //   setLoad(true);
+  //   try {
+  //     // Step 1: Request Pre-Signed URLs
+  //     // const response = await axios.post(
+  //     //   `${API}/createpost/${userId}/${communityId}/${topicId}`,
+  //     //   {
+  //     //     files: selectedFiles.map((file) => ({
+  //     //       name: file.name,
+  //     //       type: file.type,
+  //     //       size: file.size,
+  //     //     })),
 
-      //     title: postName,
-      //     description: postDesc,
-      //   }
-      // );
+  //     //     title: postName,
+  //     //     description: postDesc,
+  //     //   }
+  //     // );
 
-      // const presignedUrls: string[] = data.presignedUrls;
-      // const postContent: any[] = data.data;
+  //     // const presignedUrls: string[] = data.presignedUrls;
+  //     // const postContent: any[] = data.data;
 
-      // // Step 2: Upload Files to S3
-      // await Promise.all(
-      //   selectedFiles.map(async (file, index) => {
-      //     try {
-      //       await axios.put(presignedUrls[index], file, {
-      //         headers: {
-      //           "Content-Type": file.type,
-      //         },
-      //         onUploadProgress: (progressEvent) => {
-      //           if (progressEvent.total) {
-      //             setUploadProgress((prev: any) => {
-      //               const updatedProgress = [...prev];
-      //               updatedProgress[index] = Math.round(
-      //                 (progressEvent.loaded * 100) / progressEvent.total
-      //               );
-      //               return updatedProgress;
-      //             });
-      //           }
-      //         },
-      //       });
+  //     // // Step 2: Upload Files to S3
+  //     // await Promise.all(
+  //     //   selectedFiles.map(async (file, index) => {
+  //     //     try {
+  //     //       await axios.put(presignedUrls[index], file, {
+  //     //         headers: {
+  //     //           "Content-Type": file.type,
+  //     //         },
+  //     //         onUploadProgress: (progressEvent) => {
+  //     //           if (progressEvent.total) {
+  //     //             setUploadProgress((prev: any) => {
+  //     //               const updatedProgress = [...prev];
+  //     //               updatedProgress[index] = Math.round(
+  //     //                 (progressEvent.loaded * 100) / progressEvent.total
+  //     //               );
+  //     //               return updatedProgress;
+  //     //             });
+  //     //           }
+  //     //         },
+  //     //       });
 
-      //       setUploadSuccess((prev: any) => {
-      //         const updatedSuccess = [...prev];
-      //         updatedSuccess[index] = true;
-      //         return updatedSuccess;
-      //       });
-      //     } catch (err) {
-      //       console.error(`Upload failed for ${file.name}:`, err);
-      //       setUploadError((prev: any) => {
-      //         const updatedErrors = [...prev];
-      //         updatedErrors[index] = `Failed to upload ${file.name}`;
-      //         return updatedErrors;
-      //       });
-      //     }
-      //   })
-      // );
+  //     //       setUploadSuccess((prev: any) => {
+  //     //         const updatedSuccess = [...prev];
+  //     //         updatedSuccess[index] = true;
+  //     //         return updatedSuccess;
+  //     //       });
+  //     //     } catch (err) {
+  //     //       console.error(`Upload failed for ${file.name}:`, err);
+  //     //       setUploadError((prev: any) => {
+  //     //         const updatedErrors = [...prev];
+  //     //         updatedErrors[index] = `Failed to upload ${file.name}`;
+  //     //         return updatedErrors;
+  //     //       });
+  //     //     }
+  //     //   })
+  //     // );
 
-      // Step 3: Create Post in Database
-      const formData = new FormData();
-      formData.append("title", postName);
-      formData.append("description", postDesc);
-      postFiles.forEach((file) => {
-        formData.append("files", file); // Append each file individually
-      });
+  //     // Step 3: Create Post in Database
+  //     const formData = new FormData();
+  //     formData.append("title", postName);
+  //     formData.append("description", postDesc);
+  //     postFiles.forEach((file) => {
+  //       formData.append("files", file); // Append each file individually
+  //     });
 
-      // formData.append("isVideoFirst", JSON.stringify(isVideoFirst));
-      tags.forEach((tag) => formData.append("tags[]", tag));
-      // formData.append("postContent", JSON.stringify(postContent));
+  //     // formData.append("isVideoFirst", JSON.stringify(isVideoFirst));
+  //     tags.forEach((tag) => formData.append("tags[]", tag));
+  //     // formData.append("postContent", JSON.stringify(postContent));
 
-      const res = await axios.post(
-        `${API}/createpost/${userId}/${communityId}/${topicId}`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-      if (res?.data?.success) {
-        router.push(
-          `/main/Post?userId=${userId}&communityId=${communityId}&topicId=${topicId}`
-        );
-      }
-      console.log("Post created successfully:", res.data);
-    } catch (error) {
-      console.error("Error during post creation:", error);
-      alert("Failed to create post! Try again later");
-    } finally {
-      setUploading(false);
-    }
-    setLoad(false);
-  };
+  //     const res = await axios.post(
+  //       `${API}/createpost/${userId}/${communityId}/${topicId}`,
+  //       formData,
+  //       {
+  //         headers: {
+  //           "Content-Type": "multipart/form-data",
+  //         },
+  //       }
+  //     );
+  //     if (res?.data?.success) {
+  //       router.push(
+  //         `/main/Post?userId=${userId}&communityId=${communityId}&topicId=${topicId}`
+  //       );
+  //     }
+  //     console.log("Post created successfully:", res.data);
+  //   } catch (error) {
+  //     console.error("Error during post creation:", error);
+  //     alert("Failed to create post! Try again later");
+  //   } finally {
+  //     setUploading(false);
+  //   }
+  //   setLoad(false);
+  // };
 
   return (
     <div className="w-full z-40 h-full flex justify-center items-center">
+      <Toaster />
       <div className="flex flex-col sm:mb-0 space-y-2 items-center sm:rounded-xl w-full h-full">
         {/* header  */}
         <div className="flex  border rounded-2xl justify-between h-[60px] w-full bg-white items-center p-2">
@@ -376,7 +501,7 @@ const PageContent = () => {
               <div
                 onClick={() => {
                   if (userId && communityId && topicId && API) {
-                    uploadFilesAndCreatePost(
+                    uploadFilesAndCreatePost({
                       postName,
                       postDesc,
                       postFiles,
@@ -390,8 +515,8 @@ const PageContent = () => {
                       setUploadProgress,
                       setUploadSuccess,
                       setUploadError,
-                      setUploading
-                    );
+                      setUploading,
+                    });
                   }
                 }}
                 className="bg-[#4880FF] cursor-pointer font-medium text-white p-2 px-4 pp:px-7 rounded-xl"

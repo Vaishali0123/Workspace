@@ -2,25 +2,25 @@
 import { API } from "@/app/utils/helpers";
 import axios from "axios";
 import { useSearchParams } from "next/navigation";
+import { useRouter } from "next/router";
 import React, { Suspense, useState } from "react";
-import toast from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 interface CustomFile {
   file: File;
   url: string;
 }
 const PageContent = () => {
-  const [yes, setYes] = useState(false);
   const search = useSearchParams();
   const userId = search.get("userId");
   const collectionId = search.get("collectionId");
-  const [productname, setProductname] = useState("choco");
-  const [desc, setDesc] = useState("cc");
-  const [price, setPrice] = useState(500);
-  const [discountedprice, setDiscountedprice] = useState(450);
-  const [quantity, setQuantity] = useState(15);
-  const [weight, setWeight] = useState("1");
+  const [productname, setProductname] = useState("");
+  const [desc, setDesc] = useState("");
+  const [price, setPrice] = useState(0);
+  const [discountedprice, setDiscountedprice] = useState(0);
+  const [quantity, setQuantity] = useState(0);
+  const [weight, setWeight] = useState("");
   const [images, setImages] = useState<CustomFile[]>([]);
-
+  const router = useRouter();
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return; // Ensure files exist
 
@@ -77,8 +77,8 @@ const PageContent = () => {
         }
       );
       if (res?.data?.success) {
-        console.log(res?.data, "added");
         toast.success("Upload successful!");
+        router.back();
         setImages([]);
       }
     } catch (e) {
@@ -88,6 +88,7 @@ const PageContent = () => {
 
   return (
     <div className="h-full w-full flex pn:max-md:flex-col">
+      <Toaster />
       <div className="w-[50%] pn:max-md:w-full pn:max-md:h-full p-2 space-y-2">
         {/* general information section */}
         <div className="p-2 border bg-white rounded-xl">
@@ -235,7 +236,7 @@ const PageContent = () => {
 
           <div className="p-1 w-full gap-2 flex items-center">
             {/* switcher  */}
-            <div
+            {/* <div
               onClick={() => setYes(!yes)}
               className="h-[20px] w-[40px] rounded-xl bg-[#5570F1] relative "
             >
@@ -246,7 +247,7 @@ const PageContent = () => {
                     : " left-[1px] right-auto top-[1.2px] "
                 }`}
               ></div>
-            </div>
+            </div> */}
             {/* ---  */}
             <div className="text-[16px] flex justify-between items-center font-medium text-[#5570F1]">
               This product shipped by Grovyo

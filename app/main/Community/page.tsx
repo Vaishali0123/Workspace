@@ -8,6 +8,7 @@ import toast, { Toaster } from "react-hot-toast";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useFetchComQuery } from "@/app/redux/slices/comSlice";
+import { useAuthContext } from "@/app/Auth/Components/auth";
 interface Topics {
   nature: string;
   postcount: number;
@@ -32,7 +33,7 @@ const PageContent = () => {
   const { data, isLoading } = useFetchComQuery(userId, {
     skip: !!shouldSkip,
   });
-
+  const { data: authdata } = useAuthContext();
   useEffect(() => {
     if (data) {
       setShouldSkip(true);
@@ -73,13 +74,15 @@ const PageContent = () => {
 
     try {
       const res = await axios.delete(
-        `${API}/deletecom/${data?.id}/${communityId}`
+        `${API}/deletecom/${authdata?.id}/${communityId}`
       );
+      if (res?.data?.success) {
+        toast.success("Community deleted successfully.");
+      }
       // setComData((prevData) =>
       //   prevData.filter((com) => com._id !== communityId)
       // );
       // Optionally show a success message
-      alert(res.data.message);
     } catch (err: unknown) {
       console.log(err);
       // setError(err.response?.data?.message || "Failed to delete community");

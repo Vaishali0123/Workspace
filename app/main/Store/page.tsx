@@ -3,7 +3,6 @@ import React, { Suspense, useCallback, useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { PiClipboardText } from "react-icons/pi";
 import { BsPeople } from "react-icons/bs";
-import { FiShoppingBag } from "react-icons/fi";
 import { useDispatch } from "react-redux";
 import axios from "axios";
 import { API } from "@/app/utils/helpers";
@@ -11,13 +10,17 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { IoStorefrontOutline } from "react-icons/io5";
 import { RiLoader2Line } from "react-icons/ri";
-import { FaAsterisk, FaCircleCheck, FaPlus } from "react-icons/fa6";
+import { FaAsterisk, FaPlus } from "react-icons/fa6";
 import toast from "react-hot-toast";
 import { setIfCode } from "@/app/redux/slices/userSlice";
 import { LuCircleCheckBig } from "react-icons/lu";
 import { useFetchEarnWithUsQuery } from "@/app/redux/slices/earnwithusApi";
-import { MdPendingActions } from "react-icons/md";
 import { useAuthContext } from "@/app/Auth/Components/auth";
+import { useSelector } from "react-redux";
+import { RootState } from "@/app/redux/store";
+import Load from "../Components/Load";
+// import { FiShoppingBag } from "react-icons/fi";
+// import { MdPendingActions } from "react-icons/md";
 
 interface Products {
   name: string;
@@ -105,19 +108,27 @@ const PageContent = () => {
   const [collectionName, setCollectionName] = useState("");
   const [select, setSelect] = useState(false);
   const [category, setCategory] = useState("");
-
+  const { ifCode } = useSelector((state: RootState) => state.user);
   const dispatch = useDispatch();
   const [collpopup, setCollpopup] = useState(false);
   const [collectionData, setCollectionData] = useState([]);
   const { data: authdata } = useAuthContext();
   const userId = authdata?.id;
+
   const isStoreVerified = authdata?.isStoreVerified;
   const storeid = authdata?.storeid;
   const [shouldSkip, setShouldSkip] = useState(false);
   const { data, isLoading } = useFetchEarnWithUsQuery(userId, {
     skip: !!shouldSkip,
   });
-
+  const [load, setLoad] = useState(true);
+  const { onecom, post } = useSelector((state: RootState) => state.paramslice);
+  // const [location, setLocation] = useState({
+  //   latitude: null,
+  //   longitude: null,
+  //   accuracy: null,
+  // });
+  // const [locationError, setLocationError] = useState<string | null>(null);
   useEffect(() => {
     if (data) {
       setShouldSkip(true);
@@ -175,6 +186,10 @@ const PageContent = () => {
     // }
     try {
       setLoading(true);
+      if (!docs || !docimage || !state || !city || !houseNo || !data) {
+        toast.error("Please Enter Required Details");
+        return;
+      }
 
       const formData = new FormData();
       formData.append("houseNo", houseNo);
@@ -187,7 +202,7 @@ const PageContent = () => {
       formData.append("storepic", docimage || "");
 
       const response = await axios.post(
-        `${API}/registerstore/${data?.id}`,
+        `${API}/registerstore/${userId}`,
         formData
       );
       if (response.status === 200) {
@@ -211,7 +226,7 @@ const PageContent = () => {
       const formData = new FormData();
       formData.append("collectionName", collectionName);
       formData.append("category", category);
-      console.log(userId, data?.storeid);
+
       const response = await axios.post(
         `${API}/createcollection/${userId}/${storeid}`,
         {
@@ -219,7 +234,7 @@ const PageContent = () => {
           category: category,
         }
       );
-
+      console.log(response?.data, "re");
       if (response.data.success) {
         toast.success("Successfully created collection");
         setCollpopup(false);
@@ -232,16 +247,17 @@ const PageContent = () => {
   };
   // Get collection
   const getCollection = useCallback(async () => {
+    setLoad(true);
     try {
       const response = await axios.get(`${API}/getCollection/${userId}`);
 
       if (response.data.success) {
-        console.log(response?.data?.data, "response?.data?.data");
         setCollectionData(response?.data?.data?.collections?.collectionId);
       }
     } catch (error) {
       console.error(error);
     }
+    setLoad(false);
   }, [userId]);
   useEffect(() => {
     if (userId && isStoreVerified && collectionData?.length === 0) {
@@ -251,10 +267,12 @@ const PageContent = () => {
 
   return (
     <>
-      {!isStoreVerified ? (
+      {load ? (
+        <Load />
+      ) : !isStoreVerified ? (
         <div className="w-full h-full rounded-2xl overflow-hidden relative">
           {/* register store  */}
-          {!setIfCode ? (
+          {ifCode ? (
             <>
               <div className=" w-full  rounded-2xl space-y-2 flex items-center flex-col justify-center h-[100%] p-2">
                 <div className="border rounded-2xl space-y-2  gap-2 p-2 w-[40%] bg-white">
@@ -274,28 +292,41 @@ const PageContent = () => {
                     <div className="space-y-1 w-full">
                       <div className="flex justify-between font-semibold">
                         <div className="text-[12px]">Create Your Community</div>
-                        <div className="text-[12px]">10 Members</div>
+                        {/* <div className="text-[12px]">1</div> */}
                       </div>
                       <div className="relative w-full h-[10px] bg-gray-100 rounded-full">
-                        <div className="absolute top-0 left-0 h-full w-[70%] bg-blue-400 rounded-full"></div>
+                        <div
+                          className={`absolute top-0 left-0 h-full ${
+                            !onecom ? "w-[0%]" : "w-[100%]"
+                          }  bg-green-500 rounded-full`}
+                        ></div>
                       </div>
                     </div>
                     <div className="space-y-1 w-full">
                       <div className="flex justify-between font-semibold">
-                        <div className="text-[12px]">Create Content</div>
-                        <div className="text-[12px]">10% Engagement rate</div>
+                        <div className="text-[12px]">
+                          Share a Post in your communities
+                        </div>
+                        {/* <div className="text-[12px]">{post}</div>s */}
                       </div>
                       <div className="relative w-full h-[10px] bg-gray-100 rounded-full">
-                        <div className="absolute top-0 left-0 h-full w-[70%] bg-blue-400 rounded-full"></div>
+                        <div
+                          className={`absolute top-0 left-0 h-full ${
+                            post === 0 ? "w-[0%]" : "w-[100%]"
+                          } bg-green-500 rounded-full`}
+                        ></div>
                       </div>
                     </div>
                     <div className="space-y-1 pt-1 flex justify-end w-full">
-                      <div
+                      <button
+                        disabled={!onecom || post === 0}
                         onClick={() => setPop(true)}
-                        className="flex items-center font-semibold gap-1 rounded-xl w-full justify-center px-4 py-2 text-[12px]  bg-blue-600 text-white"
+                        className={`flex items-center font-semibold gap-1 rounded-xl w-full justify-center px-4 py-2 text-[12px] ${
+                          onecom && post > 0 ? "bg-blue-600 " : "bg-slate-400 "
+                        } bg-blue-600 text-white`}
                       >
                         Register Store
-                      </div>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -544,28 +575,38 @@ const PageContent = () => {
             <div className="border w-full bg-white rounded-2xl space-y-2 flex justify-center items-center flex-col h-[100%] p-2">
               {/* <div className="flex justify-between  gap-1 "></div> */}
 
-              <div className="flex  gap-1 w-[100%] justify-between ">
-                <div className="  flex flex-col items-center ">
-                  <div className="rounded-full bg-blue-100 w-10 h-10 flex justify-center items-center">
-                    <FiShoppingBag className="text-blue-600 text-[25px]" />
-                  </div>
-                  <div className="text-[#667085] font-semibold">All orders</div>
-                  <div className="text-center">0</div>
+              <div className="flex   w-[100%] justify-between items-center ">
+                <div className=" text-black  font-semibold">
+                  Track your Products
                 </div>
-                <div className="flex flex-col items-center ">
-                  <div className="rounded-full bg-red-100 w-10 h-10 flex justify-center items-center">
-                    <MdPendingActions className="text-red-600 text-[25px]" />
-                  </div>
-                  <div className="text-[#667085] font-semibold">Pending</div>
-                  <div className="text-center">0</div>
+                <Link
+                  href={"/main/OrderTrack"}
+                  className="bg-[#6D83F3] text-white hover:bg-[#bfd6ff] cursor-pointer font-semibold rounded-[12px] px-6 py-3 flex justify-center items-center"
+                >
+                  View Analytics
+                </Link>
+                {/* Status */}
+                {/* <div className="  flex flex-col items-center ">
+                <div className="rounded-full bg-blue-100 w-10 h-10 flex justify-center items-center">
+                  <FiShoppingBag className="text-blue-600 text-[25px]" />
                 </div>
-                <div className=" flex flex-col items-center">
-                  <div className="rounded-full bg-green-100 w-10 h-10 flex justify-center items-center">
-                    <FaCircleCheck className="text-green-600 text-[25px]" />
-                  </div>
-                  <div className="text-[#667085] font-semibold">Completed</div>
-                  <div className="text-center">0</div>
+                <div className="text-[#667085] font-semibold">All orders</div>
+                <div className="text-center">0</div>
+              </div>
+              <div className="flex flex-col items-center ">
+                <div className="rounded-full bg-red-100 w-10 h-10 flex justify-center items-center">
+                  <MdPendingActions className="text-red-600 text-[25px]" />
                 </div>
+                <div className="text-[#667085] font-semibold">Pending</div>
+                <div className="text-center">0</div>
+              </div>
+              <div className=" flex flex-col items-center">
+                <div className="rounded-full bg-green-100 w-10 h-10 flex justify-center items-center">
+                  <FaCircleCheck className="text-green-600 text-[25px]" />
+                </div>
+                <div className="text-[#667085] font-semibold">Completed</div>
+                <div className="text-center">0</div>
+              </div> */}
               </div>
             </div>
           </div>
@@ -658,11 +699,11 @@ const PageContent = () => {
                       className="h-[88%] bg-slate-100 border rounded-2xl p-2 w-full overflow-auto space-y-2 pt-2 mt-[1%]"
                     >
                       <div className="flex justify-between border-b pb-2 items-center">
-                        <div className="font-semibold">{d?.collectionName}</div>
+                        <div className="font-medium">{d?.collectionName}</div>
 
                         <Link
                           href={`/main/AddProduct?userId=${userId}&collectionId=${d._id}`}
-                          className="flex  p-2 px-4 bg-[#305ff9] text-white text-[14px] items-center justify-center rounded-xl"
+                          className="flex  p-2 px-4 bg-[#6D83F3] text-white text-[14px] items-center justify-center rounded-xl"
                         >
                           Add product
                         </Link>
@@ -759,6 +800,16 @@ const PageContent = () => {
                 )}
               </div>
             ) : null}
+            <div className="flex items-center justify-center w-full ">
+              <div
+                onClick={() => {
+                  setCollpopup(true);
+                }}
+                className="text-center p-2 mt-2 rounded-xl  text-white bg-[#305ff9] max-w-[17%] pn:max-pp:text-[12px] pn:max-sm:max-w-[30%]"
+              >
+                Create Collection
+              </div>
+            </div>
           </div>
         </div>
       )}

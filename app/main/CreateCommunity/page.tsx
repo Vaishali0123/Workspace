@@ -7,6 +7,8 @@ import { HiOutlineLockClosed } from "react-icons/hi";
 import toast from "react-hot-toast";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useDispatch } from "react-redux";
+import { setOnecom } from "@/app/redux/slices/leastparams";
 
 const Page = () => {
   const [open, setOpen] = useState<boolean>(false);
@@ -31,23 +33,29 @@ const Page = () => {
   const { data } = useAuthContext();
   const userId = data?.id;
   const communities = [
-    { category: "Tech" },
-    { category: "Health" },
-    { category: "Education" },
+    { category: "Movies & Entertainment" },
+    { category: "News" },
     { category: "Gaming" },
-    { category: "Health" },
-    { category: "Food" },
-    { category: "Entertainment" },
-    { category: "Songs & Music" },
-    { category: "Education" },
-    { category: "Tech" },
-    { category: "Health" },
-    { category: "Education" },
-    { category: "Tech" },
-    { category: "Health" },
-    { category: "Education" },
+    { category: "Career & Education" },
+    { category: "Anime & Manga" },
+    { category: "Family & Relationships" },
+    { category: "Sports" },
+    { category: "Science & Learning" },
+    { category: "DIY & Crafts" },
+    { category: "Music & Podcasts" },
+    { category: "Beauty & Fashion" },
+    { category: "Health & Fitness" },
+    { category: "Food & Cooking" },
+    { category: "Business & Finance" },
+    { category: "Photography" },
+    { category: "Travel & Outdoors" },
+    { category: "Art & Creativity" },
+    { category: "Technology & Gadgets" },
+    { category: "Pop Culture" },
+    { category: "Automotives" },
+    { category: "Pets & Animals" },
   ];
-
+  const dispatch = useDispatch();
   const router = useRouter();
   const createCommunity = async () => {
     setLoading(true);
@@ -67,6 +75,7 @@ const Page = () => {
       );
       if (res.status === 200) {
         toast.success("Successfully Community Created");
+        dispatch(setOnecom(true));
         router.push(`/main/Community?userId=${userId}`);
       }
     } catch (error) {
@@ -163,7 +172,7 @@ const Page = () => {
             }}
             className=" absolute h-full w-full flex items-center z-20 justify-center bg-[#1717170c]"
           >
-            <div className="bg-white p-4 border  max-w-[300px] flex-wrap flex gap-2 rounded-2xl">
+            <div className="bg-white p-4 border overflow-auto  max-w-[300px] flex-wrap flex gap-2 rounded-2xl">
               {communities.map((item, index) => (
                 <div
                   onClick={() => {

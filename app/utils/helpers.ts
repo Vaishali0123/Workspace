@@ -2,6 +2,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 
 export const API = process.env.NEXT_PUBLIC_API;
+export const ASSET_URL = process.env.NEXT_PUBLIC_ASSETURL;
 
 export const errorHandler = (error: unknown) => {
   // console.log(error);

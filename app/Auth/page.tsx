@@ -411,6 +411,7 @@ const Page = () => {
                   setEmail={setEmail}
                   loading={loading}
                   sendEmailOtp={sendEmailOtp}
+                  // sendEmailOtp={loginWithEmail}
                 />
               )}
             </div>
