@@ -4,8 +4,10 @@ function Logo() {
   return (
     <div>
       <svg
-        className="h-9 w-9 "
+        // className="h-9 w-9 "
         viewBox="0 0 27 31"
+        height="100%"
+        width="100%"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >

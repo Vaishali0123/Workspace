@@ -7,7 +7,7 @@ export const settingsApi = createApi({
   baseQuery: fetchBaseQuery({ baseUrl: `${API}` }),
   endpoints: (builder) => ({
     fetchSettings: builder.query({
-      query: (userId) => `/settings/${userId}`,
+      query: (userId) => `/settings/${userId}?platform=Workspace`,
     }),
   }),
 });

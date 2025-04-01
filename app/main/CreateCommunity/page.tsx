@@ -1,14 +1,15 @@
 "use client";
-import { API } from "@/app/utils/helpers";
+import { API, errorHandler } from "@/app/utils/helpers";
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { useAuthContext } from "@/app/Auth/Components/auth";
 import { HiOutlineLockClosed } from "react-icons/hi";
-import toast from "react-hot-toast";
-import Link from "next/link";
+import toast, { Toaster } from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { setOnecom } from "@/app/redux/slices/leastparams";
+import { RiLoaderLine } from "../../utils/comimports";
+import { RiUserCommunityLine } from "react-icons/ri";
 
 const Page = () => {
   const [open, setOpen] = useState<boolean>(false);
@@ -31,8 +32,9 @@ const Page = () => {
   }, []);
   const [loading, setLoading] = useState(false);
   const { data } = useAuthContext();
+
   const userId = data?.id;
-  const communities = [
+  const comcategory = [
     { category: "Movies & Entertainment" },
     { category: "News" },
     { category: "Gaming" },
@@ -58,6 +60,13 @@ const Page = () => {
   const dispatch = useDispatch();
   const router = useRouter();
   const createCommunity = async () => {
+    if (
+      !communityName ||
+      !communityCategory ||
+      !communityImage ||
+      !communityType
+    )
+      return toast.error("Missing Required fields");
     setLoading(true);
     try {
       const formData = new FormData();
@@ -79,15 +88,7 @@ const Page = () => {
         router.push(`/main/Community?userId=${userId}`);
       }
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error(
-          "Error creating community:",
-          error.response || error.message
-        );
-      } else {
-        console.error("Error creating community:", error);
-      }
-      toast.error("Failed to create community, please try again later.");
+      errorHandler(error);
     }
     setLoading(false);
   };
@@ -134,30 +135,38 @@ const Page = () => {
   // };
 
   return (
-    <div className="h-full space-y-2 ">
+    <div className="h-full sm:overflow-hidden  space-y-2 ">
+      <Toaster />
       <div className="h-[60px] w-full p-2 flex justify-between items-center bg-white border rounded-xl">
         <div className="flex items-center justify-between w-full">
           <div className="text-[20px] font-semibold text-slate-500">
             Create Community
           </div>
           <div className="flex items-center gap-2">
-            <Link
-              href={"../main/Community"}
+            <button
+              onClick={() => {
+                router.back();
+              }}
               className="flex px-4 p-2 text-[14px] items-center justify-center rounded-xl"
             >
               Discard
-            </Link>
+            </button>
             {loading ? (
               <div className="flex px-4 p-2 text-[14px] bg-blue-600 text-white items-center justify-center rounded-xl">
-                <div> Creating...</div>
+                <RiLoaderLine size={20} className="animate-spin" />
               </div>
             ) : (
-              <div
-                onClick={createCommunity}
+              <button
+                disabled={loading}
+                onClick={() => {
+                  if (userId) {
+                    createCommunity();
+                  }
+                }}
                 className="flex px-4 p-2 text-[14px] bg-blue-600 text-white items-center justify-center rounded-xl"
               >
-                <div> Create</div>
-              </div>
+                <div>Save</div>
+              </button>
             )}
           </div>
         </div>
@@ -170,10 +179,10 @@ const Page = () => {
             onClick={() => {
               setOpen(false);
             }}
-            className=" absolute h-full w-full flex items-center z-20 justify-center bg-[#1717170c]"
+            className=" absolute h-full w-full flex items-center z-20 justify-center bg-[#4442420c]"
           >
-            <div className="bg-white p-4 border overflow-auto  max-w-[300px] flex-wrap flex gap-2 rounded-2xl">
-              {communities.map((item, index) => (
+            <div className="bg-white p-4 border  pn:max-sm:overflow-auto  max-w-[500px] flex-wrap flex gap-2 rounded-2xl">
+              {comcategory.map((item, index) => (
                 <div
                   onClick={() => {
                     setCommunityCategory(item.category);
@@ -195,24 +204,35 @@ const Page = () => {
 
         <div className="p-4  ">
           <div className="py-2  flex-col flex w-full items-center gap-2 justify-center font-semibold text-[12px]">
-            <div className="h-[80px] w-[80px] border bg-white rounded-[32px] ">
-              {isClient && communityImage instanceof File && (
+            <label
+              htmlFor="comdp"
+              className="h-[80px] w-[80px] cursor-pointer border bg-white hover:opacity-80 active:opacity-80 flex rounded-[32px] justify-center items-center "
+            >
+              {isClient && communityImage instanceof File ? (
                 <img
                   src={URL.createObjectURL(communityImage)}
                   alt="Community Logo"
-                  className="h-[80px] w-[80px] object-cover  border rounded-3xl"
+                  className="h-[80px] w-[80px] object-cover  border rounded-[32px]"
                 />
+              ) : (
+                <RiUserCommunityLine size={40} className="text-gray-600" />
               )}
-            </div>
+            </label>
             {/* Display Image Preview */}
             {/* File Input */}
             <input
               type="file"
+              id="comdp"
               accept="image/*"
               onChange={handleImageChange}
-              className="p-2  flex justify-center items-center border rounded-3xl text-[14px] font-normal text-center "
+              className="p-2 hidden  border  rounded-3xl text-[14px] font-normal text-center "
             />
-            Upload Community Pic
+            <label
+              htmlFor="comdp"
+              className="text-[12px] text-blue-600 hover:text-blue-400 active:text-blue-500 cursor-pointer"
+            >
+              Upload Picture <span className="text-red-600">*</span>
+            </label>
           </div>
 
           <div className=" h-[calc(100%-150px)] flex">
@@ -220,7 +240,9 @@ const Page = () => {
             <div className="flex flex-col gap-2 h-full w-[80%] items-center">
               {/* name  */}
               <div className="w-full space-y-1 ">
-                <div className="text-[14px] text-[#667085]">Community Name</div>
+                <div className="text-[14px] text-[#667085]">
+                  Community Name <span className="text-red-600">*</span>
+                </div>
                 <input
                   value={communityName}
                   onChange={
@@ -229,7 +251,7 @@ const Page = () => {
                   }
                   type="text"
                   placeholder="Community Name"
-                  className="p-1 w-full border rounded-lg"
+                  className="p-1 w-full border outline-none rounded-lg"
                 />
               </div>
               {/* desc  */}
@@ -246,13 +268,15 @@ const Page = () => {
                   maxLength={100}
                   value={communityDescription}
                   onChange={(e) => setCommunityDescription(e.target.value)}
-                  placeholder="write your Description...."
-                  className="p-1 w-full border rounded-lg"
+                  placeholder="Write Community Description...."
+                  className="p-1 w-full outline-none  border rounded-lg"
                 />
               </div>
               {/* cat  */}
               <div className="w-full text-[14px]  space-y-1 text-[#667085]">
-                <div className="text-[14px] text-[#667085]">Category</div>
+                <div className="text-[14px] text-[#667085]">
+                  Category <span className="text-red-600">*</span>
+                </div>
                 <div
                   onClick={() => setOpen(!open)}
                   className="p-2 px-4 w-fit z-20 border bg-white rounded-lg text-center"
@@ -262,7 +286,7 @@ const Page = () => {
               </div>
               <div className="w-full space-y-1">
                 <div className="text-[14px] text-[#667085]">
-                  Select Community Type
+                  Select Community Type <span className="text-red-600">*</span>
                 </div>
                 {/* Community type 1  */}
                 <div
@@ -341,16 +365,16 @@ const Page = () => {
                 {comId === "" ? (
                   <div className="p-2 w-[60%] text-[14px] bg-white text-[#667085] border space-y-2 rounded-xl">
                     <div>
-                      To form a new topic in this community, you have to get
-                      atleast 150 members
+                      To form a new topic you have to get atleast 150 members in
+                      this community,
                     </div>
                     <div className="space-y-1 w-full ">
                       <div className="flex justify-between text-[#666] font-semibold">
                         <div className="text-[12px]">Members</div>
-                        <div className="text-[12px]">150/150</div>
+                        <div className="text-[12px]">0/150</div>
                       </div>
                       <div className="relative w-full h-[10px] bg-gray-100 rounded-full">
-                        <div className="absolute top-0 left-0  h-full w-[100%] bg-blue-400 rounded-full"></div>
+                        <div className="absolute top-0 left-0  h-full w-[0%] bg-blue-400 rounded-full"></div>
                       </div>
                     </div>
                   </div>

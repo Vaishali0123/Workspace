@@ -10,7 +10,7 @@ import { BarChart, Line, LineChart, Tooltip, YAxis } from "recharts";
 import React, { useCallback, useEffect, useState } from "react";
 import { Bar, CartesianGrid, XAxis } from "recharts";
 import { RiArrowDropDownLine } from "react-icons/ri";
-import { API } from "@/app/utils/helpers";
+import { API, errorHandler } from "@/app/utils/helpers";
 import axios from "axios";
 import { useAuthContext } from "@/app/Auth/Components/auth";
 import Link from "next/link";
@@ -28,6 +28,7 @@ import { PiClipboardText } from "react-icons/pi";
 import { FiShoppingBag } from "react-icons/fi";
 import { MdPendingActions } from "react-icons/md";
 import { FaCircleCheck } from "react-icons/fa6";
+import { useFetchStoreAnalyticsQuery } from "@/app/redux/slices/storeanalytics";
 interface CommunityAnalytics {
   createdAt: Date;
   newmembers: Array<string>;
@@ -84,7 +85,7 @@ interface CommunityData {
 const Page = () => {
   const { data } = useAuthContext();
   const [open, setOpen] = useState(false);
-  const [click, setClick] = useState(1);
+  const [click, setClick] = useState(0);
   // Retrieve `userId`
   const userId = data?.id;
   const dispatch = useDispatch();
@@ -98,9 +99,17 @@ const Page = () => {
   const [postAnalyt, setPostAnalyt] = useState([]);
   const [currentAnalyt, setCurrentAnalyt] = useState("Community Analytics");
   const [selectedPost, setSelectedPost] = useState("");
+  // const [shouldSkip, setShouldSkip] = useState(false);
+  const shouldSkip = false;
   const showPopup = true;
-
-  // Retrieve & decode `comdata`
+  const { data: StoreAnalytics, isLoading } = useFetchStoreAnalyticsQuery(
+    userId,
+    {
+      skip: !!shouldSkip,
+    }
+  );
+  console.log(isLoading);
+  // Retrieve & deccode `comdata`
   // const comdataString = searchParams.get("comdata");
 
   // const comdata = comdataString
@@ -127,7 +136,7 @@ const Page = () => {
         // }
       }
     } catch (error) {
-      console.error(error);
+      errorHandler(error);
     }
   };
 
@@ -142,7 +151,6 @@ const Page = () => {
         const res = await axios.get(
           `${API}/getcomanalytics/${data?.id}/${communityId}`
         );
-        console.log(res?.data?.data, "comna");
         setComAnalyt(res?.data?.data);
       } catch (error) {
         console.error(error);
@@ -813,167 +821,169 @@ const Page = () => {
             </div>
             <Link
               href="/main/CreateCommunity"
-              className="flex px-4 p-2 text-[14px] bg-blue-600 text-white items-center justify-center rounded-xl"
+              className="flex px-4 p-2 text-[14px] bg-blue-600 hover:bg-blue-400 active:bg-blue-500 text-white items-center justify-center rounded-xl"
             >
               <div> Create Community</div>
             </Link>
           </div>
         )
       ) : click === 1 ? (
-        // if you don't have a Store
-        // <div className="w-full h-[calc(100%-60px)] bg-white  pn:max-sm:flex-col pn:max-sm:p-2 pn:max-sm:overflow-auto pn:max-sm:overflew-y-scroll flex flex-col gap-2 items-center justify-center">
-        //   <div className="text-black font-semibold"> Create Store</div>
-        //   <Link
-        //     href="/main/CreateCommunity"
-        //     className="flex px-4 p-2 text-[14px] bg-blue-600 text-white items-center justify-center rounded-xl"
-        //   >
-        //     <div> Create Store</div>
-        //   </Link>
-        // </div>
-
-        <div className="w-full h-[calc(100%-60px)] relative flex pn:max-sm:flex-col   pn:max-sm:p-2 pn:max-sm:overflow-auto pn:max-sm:overflew-y-scroll gap-2 items-center justify-center">
-          <div className="h-full w-[30%] flex items-center  justify-center">
-            {/* Left Overview Store portion */}
-            <div className="h-full w-full flex  flex-col bg-white space-y-2 p-2 rounded-2xl">
-              <div className="w-full h-[150px] flex items-center  justify-center gap-2 rounded-2xl ">
-                {/* Upper 1st */}
-                <div className="w-[50%] flex flex-col justify-evenly   h-full bg-white border rounded-2xl">
-                  <div className="py-2 w-full flex items-center justify-evenly">
-                    <div className="rounded-full bg-blue-100 w-10 h-10 flex justify-center items-center">
-                      <PiClipboardText className="text-[#6DACE7] text-[25px]" />
-                    </div>
-                    <div className=" text-[#667085] font-semibold">
-                      Earnings
-                    </div>
-                  </div>
-                  <div className="text-[20px] font-bold pl-5">0</div>
-                  <div className=" text-[#ABABAB] text-[12px] w-full px-2">
-                    5% in the last 1 month
-                  </div>
-                </div>
-                {/* Upper 2nd */}
-                <div className="w-[50%] h-full flex flex-col justify-evenly bg-white border rounded-2xl">
-                  <div className="py-2 w-full flex items-center justify-evenly">
-                    <div className="rounded-full bg-purple-100 w-10 h-10 flex justify-center items-center">
-                      <BsPeople className="text-[#AA7AEB] text-[25px]" />
-                    </div>
-                    <div className="text-[#667085] font-semibold">
-                      Customers
-                    </div>
-                  </div>
-                  <div className="text-[20px] font-bold pl-5">0</div>
-                  <div className=" text-[#ABABAB] text-[12px] w-full px-2">
-                    3% in the last 1 month
-                  </div>
-                </div>
-              </div>
-              {/* track order */}
-              <div className="w-full h-[150px] flex items-center justify-center rounded-2xl border bg-white">
-                <div className="flex px-2    w-[100%] justify-between items-center ">
-                  {/* Status */}
-                  <div className=" flex flex-col items-center ">
-                    <div className="rounded-full bg-blue-100 w-10 h-10 flex justify-center items-center">
-                      <FiShoppingBag className="text-blue-600 text-[20px]" />
-                    </div>
-                    <div className="text-[#667085] text-[14px] font-medium">
-                      All orders
-                    </div>
-                    <div className="text-center">0</div>
-                  </div>
-                  <div className="flex flex-col items-center ">
-                    <div className="rounded-full bg-red-100 w-10 h-10 flex justify-center items-center">
-                      <MdPendingActions className="text-red-600 text-[20px]" />
-                    </div>
-                    <div className="text-[#667085] text-[14px] font-medium">
-                      Pending
-                    </div>
-                    <div className="text-center">0</div>
-                  </div>
-                  <div className=" flex flex-col items-center">
-                    <div className="rounded-full bg-green-100 w-10 h-10 flex justify-center items-center">
-                      <FaCircleCheck className="text-green-600 text-[20px]" />
-                    </div>
-                    <div className="text-[#667085] text-[14px] font-medium">
-                      Completed
-                    </div>
-                    <div className="text-center">0</div>
-                  </div>
-                </div>
-              </div>
-              {/* <div className="bg-red-600 w-full h-[calc(100%-300px)] flex items-center justify-center rounded-2xl"></div> */}
+        <>
+          {/* if you don't have a Store */}
+          {!StoreAnalytics?.data?.storeid && (
+            <div className="w-full h-[calc(100%-60px)] bg-white  pn:max-sm:flex-col pn:max-sm:p-2 pn:max-sm:overflow-auto pn:max-sm:overflew-y-scroll flex flex-col gap-2 items-center justify-center">
+              <div className="text-black font-semibold"> Create Store</div>
+              <Link
+                href="/main/Store"
+                className="flex px-4 p-2 text-[14px] bg-blue-600 hover:bg-blue-400 active:bg-blue-500 text-white items-center justify-center rounded-xl"
+              >
+                <div> Create Store</div>
+              </Link>
             </div>
-          </div>
-          <div className="h-full w-[70%] flex items-center  justify-center ">
-            <div className="h-full w-full pn:max-sm:w-full   pn:max-sm:h-full sm:overflow-auto  space-y-2">
-              <div className="h-[calc(100%-60px)] bg-white  w-full relative  overflow-hidden border rounded-2xl">
-                <Card className="h-[calc(100%-100px)]  w-full shadow-none  border-none">
-                  {chartDatastore?.length > 0 ? (
-                    <CardContent className="flex h-full flex-1 items-center pb-0">
-                      <div className="w-full">
-                        <BarChart
-                          width={500}
-                          height={300}
-                          data={chartDatastore}
-                          margin={{ left: 12, right: 12 }}
-                        >
-                          <CartesianGrid
-                            vertical={false}
-                            strokeDasharray="2 2"
-                            stroke="#e5e7eb"
-                          />
-                          <XAxis
-                            dataKey="date"
-                            tickLine={false}
-                            axisLine={false}
-                            tickMargin={8}
-                            minTickGap={16}
-                            tickFormatter={(value) => {
-                              const date = new Date(value);
-                              return date.toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                              });
-                            }}
-                          />
-                          <Tooltip
-                            formatter={(value, name) => [
-                              value,
-                              name === "views" ? "Views" : "Mobile",
-                            ]}
-                            labelFormatter={(value) => {
-                              return new Date(value).toLocaleDateString(
-                                "en-US",
-                                {
+          )}
+          <div className="w-full h-[calc(100%-60px)] relative flex pn:max-sm:flex-col   pn:max-sm:p-2 pn:max-sm:overflow-auto pn:max-sm:overflew-y-scroll gap-2 items-center justify-center">
+            <div className="h-full w-[30%] flex items-center  justify-center">
+              {/* Left Overview Store portion */}
+              <div className="h-full w-full flex  flex-col bg-white space-y-2 p-2 rounded-2xl">
+                <div className="w-full h-[150px] flex items-center  justify-center gap-2 rounded-2xl ">
+                  {/* Upper 1st */}
+                  <div className="w-[50%] flex flex-col justify-evenly   h-full bg-white border rounded-2xl">
+                    <div className="py-2 w-full flex items-center justify-evenly">
+                      <div className="rounded-full bg-blue-100 w-10 h-10 flex justify-center items-center">
+                        <PiClipboardText className="text-[#6DACE7] text-[25px]" />
+                      </div>
+                      <div className=" text-[#667085] font-semibold">
+                        Earnings
+                      </div>
+                    </div>
+                    <div className="text-[20px] font-bold pl-5">0</div>
+                    {/* <div className=" text-[#ABABAB] text-[12px] w-full px-2">
+                    5% in the last 1 month
+                  </div> */}
+                  </div>
+                  {/* Upper 2nd */}
+                  <div className="w-[50%] h-full flex flex-col justify-evenly bg-white border rounded-2xl">
+                    <div className="py-2 w-full flex items-center justify-evenly">
+                      <div className="rounded-full bg-purple-100 w-10 h-10 flex justify-center items-center">
+                        <BsPeople className="text-[#AA7AEB] text-[25px]" />
+                      </div>
+                      <div className="text-[#667085] font-semibold">
+                        Customers
+                      </div>
+                    </div>
+                    <div className="text-[20px] font-bold pl-5">0</div>
+                    {/* <div className=" text-[#ABABAB] text-[12px] w-full px-2">
+                    3% in the last 1 month
+                  </div> */}
+                  </div>
+                </div>
+                {/* track order */}
+                <div className="w-full h-[150px] flex items-center justify-center rounded-2xl border bg-white">
+                  <div className="flex px-2    w-[100%] justify-between items-center ">
+                    {/* Status */}
+                    <div className=" flex flex-col items-center ">
+                      <div className="rounded-full bg-blue-100 w-10 h-10 flex justify-center items-center">
+                        <FiShoppingBag className="text-blue-600 text-[20px]" />
+                      </div>
+                      <div className="text-[#667085] text-[14px] font-medium">
+                        All orders
+                      </div>
+                      <div className="text-center">0</div>
+                    </div>
+                    <div className="flex flex-col items-center ">
+                      <div className="rounded-full bg-red-100 w-10 h-10 flex justify-center items-center">
+                        <MdPendingActions className="text-red-600 text-[20px]" />
+                      </div>
+                      <div className="text-[#667085] text-[14px] font-medium">
+                        Pending
+                      </div>
+                      <div className="text-center">0</div>
+                    </div>
+                    <div className=" flex flex-col items-center">
+                      <div className="rounded-full bg-green-100 w-10 h-10 flex justify-center items-center">
+                        <FaCircleCheck className="text-green-600 text-[20px]" />
+                      </div>
+                      <div className="text-[#667085] text-[14px] font-medium">
+                        Completed
+                      </div>
+                      <div className="text-center">0</div>
+                    </div>
+                  </div>
+                </div>
+                {/* <div className="bg-red-600 w-full h-[calc(100%-300px)] flex items-center justify-center rounded-2xl"></div> */}
+              </div>
+            </div>
+            <div className="h-full w-[70%] flex items-center  justify-center ">
+              <div className="h-full w-full pn:max-sm:w-full   pn:max-sm:h-full sm:overflow-auto  space-y-2">
+                <div className="h-[calc(100%-60px)] bg-white  w-full relative  overflow-hidden border rounded-2xl">
+                  <Card className="h-[calc(100%-100px)]  w-full shadow-none  border-none">
+                    {chartDatastore?.length > 0 ? (
+                      <CardContent className="flex h-full flex-1 items-center pb-0">
+                        <div className="w-full">
+                          <BarChart
+                            width={500}
+                            height={300}
+                            data={chartDatastore}
+                            margin={{ left: 12, right: 12 }}
+                          >
+                            <CartesianGrid
+                              vertical={false}
+                              strokeDasharray="2 2"
+                              stroke="#e5e7eb"
+                            />
+                            <XAxis
+                              dataKey="date"
+                              tickLine={false}
+                              axisLine={false}
+                              tickMargin={8}
+                              minTickGap={16}
+                              tickFormatter={(value) => {
+                                const date = new Date(value);
+                                return date.toLocaleDateString("en-US", {
                                   month: "short",
                                   day: "numeric",
-                                  year: "numeric",
-                                }
-                              );
-                            }}
-                          />
-                          <Bar
-                            dataKey="views"
-                            fill="#4f46e5"
-                            radius={[4, 4, 0, 0]}
-                            barSize={20}
-                          />
-                          <Bar
-                            dataKey="mobile"
-                            fill="#10b981"
-                            radius={[4, 4, 0, 0]}
-                            barSize={20}
-                          />
-                        </BarChart>
+                                });
+                              }}
+                            />
+                            <Tooltip
+                              formatter={(value, name) => [
+                                value,
+                                name === "views" ? "Views" : "Mobile",
+                              ]}
+                              labelFormatter={(value) => {
+                                return new Date(value).toLocaleDateString(
+                                  "en-US",
+                                  {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                  }
+                                );
+                              }}
+                            />
+                            <Bar
+                              dataKey="views"
+                              fill="#4f46e5"
+                              radius={[4, 4, 0, 0]}
+                              barSize={20}
+                            />
+                            <Bar
+                              dataKey="mobile"
+                              fill="#10b981"
+                              radius={[4, 4, 0, 0]}
+                              barSize={20}
+                            />
+                          </BarChart>
+                        </div>
+                      </CardContent>
+                    ) : (
+                      <div className=" font-bold pt-4 self-center flex items-center text-slate-500 justify-center">
+                        Register Store
                       </div>
-                    </CardContent>
-                  ) : (
-                    <div className=" font-bold pt-4 self-center flex items-center text-slate-500 justify-center">
-                      Register Store
-                    </div>
-                  )}
-                </Card>
-              </div>
-              {/* <div className="h-[60px] w-full bg-white border rounded-2xl px-2 flex items-center justify-between">
+                    )}
+                  </Card>
+                </div>
+                {/* <div className="h-[60px] w-full bg-white border rounded-2xl px-2 flex items-center justify-between">
               <div className="p-1 px-2 h-fit font-semibold text-[#1d1d1d] ">
                 Topics
               </div>
@@ -986,23 +996,24 @@ const Page = () => {
             <div className="h-[500px] w-full  rounded-2xl">
               <Post />
             </div> */}
-            </div>
-          </div>
-          {showPopup && (
-            <div className="absolute inset-0 backdrop-blur-sm bg-gray-600 bg-opacity-50 flex items-center justify-center z-10">
-              <div className="bg-white p-6 rounded-2xl shadow-lg text-center flex flex-col items-center">
-                <Lottie
-                  animationData={comingSoonAnimation}
-                  className="w-40 h-40"
-                />
-
-                <p className="text-gray-600 mt-2 font-medium">
-                  This feature is under development.
-                </p>
               </div>
             </div>
-          )}
-        </div>
+            {showPopup && (
+              <div className="absolute inset-0 backdrop-blur-sm bg-gray-600 bg-opacity-50 flex items-center justify-center z-10">
+                <div className="bg-white p-6 rounded-2xl shadow-lg text-center flex flex-col items-center">
+                  <Lottie
+                    animationData={comingSoonAnimation}
+                    className="w-40 h-40"
+                  />
+
+                  <p className="text-gray-600 mt-2 font-medium">
+                    This feature is under development.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </>
       ) : (
         click === 2 && (
           <div className="w-full h-[calc(100%-60px)] bg-white  pn:max-sm:flex-col pn:max-sm:p-2 pn:max-sm:overflow-auto pn:max-sm:overflew-y-scroll flex flex-col gap-2 items-center justify-center">

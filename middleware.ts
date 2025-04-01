@@ -32,16 +32,5 @@ export const config = {
     // "/",
     "/main",
     "/main/:path*",
-
-    // "/main/:Overview*",
-    // "/main/:Community*",
-    // "/main/:SetUp*",
-    // "/main/:AddProduct*",
-    // "/main/:CreateCommunity*",
-    // "/main/:OrderTrack*",
-    // "/main/:Store*",
-    // "/main/:Post*",
-    // "/main/:Prosite*",
-    // "/main/:Earnwithus*",
   ],
 };

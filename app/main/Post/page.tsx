@@ -46,8 +46,8 @@ const PageContent: React.FC = () => {
       const response = await axios.get(
         `${API}/getpost/${communityId}/${topicId}`
       );
+
       if (response.data?.success) {
-        console.log(response.data.posts, "esponse.data.posts");
         setPostData(response.data.posts);
       }
     } catch (err) {

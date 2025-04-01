@@ -85,7 +85,7 @@
 
 /* Handle on hover */
 ::-webkit-scrollbar-thumb:hover {
-  background: #b30000;
+  background: #454545;
 }
 
 @keyframes shimmer {
@@ -133,4 +133,21 @@
   100% {
     left: 100%;
   }
+}
+@keyframes highlight-flash {
+  0%,
+  100% {
+    transform: scale(1);
+    border-color: transparent;
+  }
+  50% {
+    transform: scale(1.1);
+    border-color: black;
+  }
+}
+
+.animate-highlight {
+  animation: highlight-flash 0.5s ease-in-out 3;
+  border: 2px solid gray-800;
+  border-radius: 10px;
 }

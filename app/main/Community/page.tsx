@@ -69,8 +69,6 @@ const PageContent = () => {
     setLoading(true);
     // setError(""); // Reset any previous error
     setOpen(!open);
-    toast.success("Community Deleted Successfully");
-    window.location.reload(); // This reloads the entire page
 
     try {
       const res = await axios.delete(
@@ -78,6 +76,7 @@ const PageContent = () => {
       );
       if (res?.data?.success) {
         toast.success("Community deleted successfully.");
+        window.location.reload();
       }
       // setComData((prevData) =>
       //   prevData.filter((com) => com._id !== communityId)
@@ -109,7 +108,7 @@ const PageContent = () => {
   return (
     <>
       <Toaster />
-      <div className=" sm:rounded-2xl relative sm:border h-full w-full pn:max-sm:h-[calc(100vh - 50px)] overflow-hidden sm:bg-white">
+      <div className=" sm:rounded-2xl  sm:border h-full w-full pn:max-sm:h-[calc(100vh - 50px)] overflow-hidden sm:bg-white">
         <div className="font-semibold text-[15px] h-[50px] tracking-tighter flex p-3 items-center w-full pn:max-sm:hidden rounded-t-xl bg-[#F1F4F9]">
           <div className="w-[50%]">Communities</div>
           <div className="w-[20%] text-center">Topics</div>
@@ -121,7 +120,7 @@ const PageContent = () => {
           </div>
         </div>
 
-        <div className="h-[calc(100%-50px)] w-full overflow-auto">
+        <div className="h-[calc(100%-50px)]  relative w-full overflow-auto">
           {isLoading ? (
             <>
               <div className="items-center w-full pn:max-sm:space-y-2 border-b p-2 relative bg-[#F8FAFC] shadow-sm ">
@@ -435,15 +434,15 @@ const PageContent = () => {
             data?.data?.comdata?.map((d: CommunityData, i: number) => (
               <div
                 key={i}
-                className=" items-center w-full pn:max-sm:space-y-2 border-b p-2 relative bg-[#F8FAFC] shadow-sm "
+                className=" items-center w-full pn:max-sm:space-y-2 border-b p-2  bg-[#F8FAFC] shadow-sm "
               >
-                <div className="flex items-center justify-between w-full">
+                <div className="flex  items-center justify-between w-full">
                   <div className="flex items-center w-[50%] gap-2">
                     <div className="h-[50px] w-[50px] rounded-[18px] border border-dashed flex items-center justify-center">
                       <img
                         alt="dps"
                         src={d?.dp}
-                        className=" bg-contain bg-slate-400 h-[44px] rounded-[16px] w-[44px]"
+                        className=" object-cover bg-white h-[44px] rounded-[16px] w-[44px]"
                       />
                     </div>
                     <div className="font-semibold text-black">
@@ -473,7 +472,12 @@ const PageContent = () => {
                     <BsThreeDotsVertical className="text-gray-500 cursor-pointer" />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2 items-center sm:hidden justify-between w-full">
+                <div
+                  onClick={() => {
+                    setOpen(false);
+                  }}
+                  className="grid grid-cols-2  gap-2 items-center sm:hidden justify-between w-full"
+                >
                   <div className="w-[100%] bg-white border rounded-2xl space-y-2 p-2 text-[12px]">
                     <div className="">Topics</div>
                     <div className="w-full text-center">
@@ -497,43 +501,44 @@ const PageContent = () => {
                   </div> */}
                 </div>
                 {open === true && selectedCommunity === d._id ? (
-                  // <div
-                  //   onClick={() => setOpen(false)}
-                  //   className="absolute w-full bg-[#0f0f0f3d] h-full right-0 bottom-0 z-10"
-                  // >
-                  <div className=" w-[120px] absolute bg-white right-0 border shadow-lg rounded-2xl py-2 z-10">
-                    {/* <Link
+                  <div
+                    onClick={() => setOpen(false)}
+                    className="absolute w-full bg-[#4442420c] pt-10 h-full flex justify-end right-0 bottom-0 z-10"
+                  >
+                    <div className=" w-[120px] h-fit  absolute bg-white right-0 border shadow-lg rounded-2xl py-2 z-10">
+                      {/* <Link
                       href={`../main/CreateCommunity?userId=${userId}&comId=${d._id}`}
                       className="w-full px-4 py-2 text-sm hover:bg-gray-100 flex items-center justify-center font-semibold"
                     >
                       Edit
                     </Link> */}
-                    <button
-                      disabled={loading}
-                      onClick={() => deleteCommunity(d._id)} // Pass community ID here
-                      className="w-full px-4 py-2 text-sm hover:bg-gray-100 font-semibold"
-                    >
-                      Delete
-                    </button>
+                      <button
+                        disabled={loading}
+                        onClick={() => deleteCommunity(d._id)} // Pass community ID here
+                        className="w-full px-4 py-2 text-sm hover:bg-gray-100 font-semibold"
+                      >
+                        Delete
+                      </button>
 
-                    {(d?.topics as Topics[])
-                      ?.filter(
-                        (topic: { nature: string }) =>
-                          topic.nature === "Posts" || topic.nature === "post"
-                      )
-                      ?.map((t: Topics, i: number) => (
-                        <div
-                          key={i}
-                          className="w-full flex justify-center items-center"
-                        >
-                          <Link
-                            href={`../main/Post?userId=${userId}&communityId=${d._id}&topicId=${t._id}`}
-                            className="w-full text-center px-4 py-2 text-sm hover:bg-gray-100 font-semibold"
+                      {(d?.topics as Topics[])
+                        ?.filter(
+                          (topic: { nature: string }) =>
+                            topic.nature === "Posts" || topic.nature === "post"
+                        )
+                        ?.map((t: Topics, i: number) => (
+                          <div
+                            key={i}
+                            className="w-full flex justify-center items-center"
                           >
-                            {t?.topicName ? t?.topicName : "Posts"}
-                          </Link>
-                        </div>
-                      ))}
+                            <Link
+                              href={`../main/Post?userId=${userId}&communityId=${d._id}&topicId=${t._id}`}
+                              className="w-full text-center px-4 py-2 text-sm hover:bg-gray-100 font-semibold"
+                            >
+                              {t?.topicName ? t?.topicName : "Posts"}
+                            </Link>
+                          </div>
+                        ))}
+                    </div>
                   </div>
                 ) : null}
               </div>

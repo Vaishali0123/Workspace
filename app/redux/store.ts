@@ -7,6 +7,7 @@ import { settingsApi } from "./slices/settingApi";
 import { earnwithusApi } from "./slices/earnwithusApi";
 import { fetchComApi } from "./slices/comSlice";
 import paramsSlice from "./slices/leastparams";
+import { storeAnalyticsApi } from "./slices/storeanalytics";
 
 // Automatically adds the thunk middleware and the Redux DevTools extension
 const store = configureStore({
@@ -19,12 +20,14 @@ const store = configureStore({
     [settingsApi.reducerPath]: settingsApi.reducer,
     [earnwithusApi.reducerPath]: earnwithusApi.reducer,
     [fetchComApi.reducerPath]: fetchComApi.reducer,
+    [storeAnalyticsApi.reducerPath]: storeAnalyticsApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware()
       .concat(settingsApi.middleware)
       .concat(earnwithusApi.middleware)
-      .concat(fetchComApi.middleware),
+      .concat(fetchComApi.middleware)
+      .concat(storeAnalyticsApi.middleware),
 });
 export type RootState = ReturnType<typeof store.getState>;
 export default store;

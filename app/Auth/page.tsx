@@ -22,6 +22,7 @@ import EmailInput from "./Components/EmailInput";
 import EmailOtpComponent from "./Components/EmailOtpComponent";
 import MobileInput from "./Components/MobileInput";
 import OtpComponent from "./Components/OtpComponent";
+import Logo from "../assets/Logo";
 
 interface Slide {
   img: StaticImageData;
@@ -74,11 +75,11 @@ const Page = () => {
       setData(data);
       setAuth(true);
 
-      toast.success("Login successful!");
+      // toast.success("Login successful!");
       // changeRole();
       router.push("/main/Overview");
     } catch (error) {
-      console.log(error);
+      errorHandler(error);
     }
   };
 
@@ -95,19 +96,24 @@ const Page = () => {
       // Make the axios POST request to login with phone number
       const response = await axios.post(`${API}/loginwithnumber`, {
         phone: "91" + phoneNumber,
-        platform: "workSpace",
+        platform: "Workspace",
       });
 
       // Check if the response is successful
       if (response.data.success) {
         cookieSetter(response.data.data, response.data.access_token);
       } else {
-        // Handle case when login fails, like user not found
-        toast.error("Seems like you don't have an account in the app.");
+        toast.error("Seems like you don't have an account.");
+        window.open("https://grovyo.com/auth/signup", "_blank");
       }
+      // else {
+      //   // Handle case when login fails, like user not found
+      //   toast.error("Seems like you don't have an account in the app.");
+      // }
     } catch (error) {
       errorHandler(error);
-    } finally {
+
+      window.open("https://grovyo.com/auth/signup", "_blank");
       setLoading(false);
     }
   };
@@ -162,7 +168,6 @@ const Page = () => {
       setShowOtp(true);
       toast.success("Otp Sent Successfully!");
     } catch (error) {
-      console.log(error);
       errorHandler(error);
     } finally {
       setLoading(false);
@@ -171,16 +176,20 @@ const Page = () => {
 
   const loginWithEmail = async () => {
     try {
+      setLoading(true);
       const response = await axios.post(`${API}/loginWithEmail`, {
         email: email,
       });
       if (response.data.success) {
         cookieSetter(response.data.data, response.data.access_token);
       } else {
-        toast.error("Seems like you don't have an account in the app.");
+        toast.error("Seems like you don't have an account.");
+        window.open("https://grovyo.com/auth/signup", "_blank");
       }
     } catch (error) {
       errorHandler(error);
+      window.open("https://grovyo.com/auth/signup", "_blank");
+      setLoading(false);
     }
   };
 
@@ -207,7 +216,6 @@ const Page = () => {
       }
     } catch (error) {
       errorHandler(error);
-      console.log(error);
     } finally {
       setLoading(false);
     }
@@ -230,6 +238,7 @@ const Page = () => {
   }, []);
   return (
     <div className="h-screen w-screen bg-loginbg bg-cover bg-center bg-[#fefefe] flex pn:max-sm:flex-col">
+      {/* left  */}
       <div className="w-[50%] h-full flex py-20 justify-end items-center pn:max-sm:hidden">
         <div className="overflow-hidden w-[98%] bg-loginbg bg-cover bg-center rounded-xl bg-[#A5BEFE] h-[95vh] pt-36">
           <div
@@ -272,100 +281,83 @@ const Page = () => {
           </div>
         </div>
       </div>
-      <div className="w-[45%] flex justify-center items-center pn:max-sm:w-full">
+      {/* right  */}
+      <div className="w-[45%] flex justify-center h-full items-center pn:max-sm:w-full">
         {/* {children} */}
         <div className=" inset-0 w-full z-50 h-screen flex justify-center items-center ">
-          <div className="w-[50%] h-[85%] justify-center flex flex-col p-2 space-y-3 items-start">
-            {/* web Qr  */}
-            {/* <div className="w-[120px] h-[120px] border-dotted border-2 border-[#d9d9d9] bg-[#000] rounded-3xl">
-              <Image alt="img" src={Grovyo} className="h-[100%] w-[100%]" />
-            </div> */}
+          <div className="w-[50%] sm:max-md:w-[70%] pn:max-sm:w-[80%] h-[85%] justify-center pn:max-sm:items-center flex flex-col p-2 space-y-3 items-start">
+            {/* Logo  */}
+            <div className="w-[70px] sm:hidden h-[70px] border-dotted  flex items-center justify-center rounded-3xl">
+              <Logo />
+            </div>
             <div className="text-[40px] font-extrabold text-[#2c2c2c]">
               Login
             </div>
             {/* text  */}
-            {/* <div className="text-xl font-semibold text-[#2c2c2c]">
-              Sign in with QR code
-            </div> */}
-            {/* <div className="flex flex-col gap-3 justify-center items-center"> */}
-            {/* <div className="max-w-[70%] text-sm text-[#9095A0] text-center">
-                Open the{" "}
-                <a
-                  className="text-blue-600 cursor-pointer"
-                  href="https://play.google.com/store/apps/details?id=com.grovyomain&hl=en_IN&gl=US"
-                  target="_blank"
-                >
-                  Grovyo
-                </a>{" "}
-                app's camera to scan this code and log in instantly.
-              </div> */}
-            {/* </div> */}
-            {/* web Or Sign in with bar */}
-            {/* <div className="flex pn:max-sm:hidden items-center justify-center w-full">
-              <hr className="flex-grow border-t border-dashed text-[#3b3b3b] border-[#9095A0] " />
-              <span className="px-3 text-[12px] font-medium text-[#9095A0] bg-transparent ">
-                Sign in with
-              </span>
-              <hr className="flex-grow border-t border-dashed text-[#9095A0] border-[#9095A0]" />
-            </div> */}
-            <div className="flex pn:max-sm:hidden w-full">
-              <span className=" text-[16px] font-medium text-[#9095A0] bg-transparent ">
-                &quot;Don’t have an account?
-                <span className="text-blue-500">
-                  <Link
-                    href="https://grovyo.com/auth/signup"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="cursor-pointer"
-                  >
-                    Sign up here
-                  </Link>{" "}
+
+            {!showOtp && (
+              <div className="flex pn:max-sm:text-center">
+                <span className=" text-[16px] font-medium text-[#9095A0] bg-transparent ">
+                  &quot;Don’t have an account?{" "}
+                  <span className="text-blue-500">
+                    <Link
+                      href="https://grovyo.com/auth/signup"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="cursor-pointer"
+                    >
+                      Sign up here
+                    </Link>
+                  </span>
+                  &quot;
                 </span>
-                &quot;
-              </span>
-            </div>
+              </div>
+            )}
+
             {/* Switcher */}
-            <div className="grid grid-cols-1 p-1 relative rounded-2xl bg-slate-50 pn:max-sm:-mt-6 w-full md:w-[100%]">
-              <div className="w-full flex rounded-xl text-[#303030] select-none text-[14px]">
-                <div
-                  onClick={() => {
-                    if (showOtp === true) {
-                      return;
-                    }
-                    setChange(1);
-                  }}
-                  className={` p-2 rounded-xl flex justify-center items-center h-full w-full z-10 ${
-                    change === 1 ? "font-bold " : "cursor-pointer"
-                  }`}
-                >
-                  Phone no.
-                </div>
-                <div
-                  className={`absolute duration-100 top-0.5 w-[150px] h-[90%] rounded-xl bg-slate-100 ${
-                    change === 1 ? "left-[3px] " : " left-[177px]"
-                  }`}
-                ></div>
-                <div
-                  onClick={() => {
-                    if (showOtp === true) {
-                      return;
-                    }
-                    setChange(2);
-                  }}
-                  className={` p-2 rounded-xl flex justify-center items-center h-full w-full z-10 ${
-                    change === 2 ? "font-bold " : "cursor-pointer"
-                  }`}
-                >
-                  Email
+            {!showOtp && (
+              <div className="grid grid-cols-1  border-2 border-slate-50 relative rounded-xl bg-slate-50 pn:max-sm:-mt-6 w-fit">
+                <div className="flex rounded-xl text-[#303030] select-none text-[14px]">
+                  <div
+                    onClick={() => {
+                      if (showOtp) {
+                        return;
+                      }
+                      setChange(1);
+                    }}
+                    className={`  rounded-xl flex justify-center items-center h-[35px] w-[150px] z-10 ${
+                      change === 1 ? "font-bold " : "cursor-pointer"
+                    }`}
+                  >
+                    Phone no.
+                  </div>
+                  <div
+                    className={`absolute duration-100 h-[35px] w-[50%] rounded-xl bg-slate-100 ${
+                      change === 1 ? "left-[0px] " : " left-[50%]"
+                    }`}
+                  ></div>
+                  <div
+                    onClick={() => {
+                      if (showOtp) {
+                        return;
+                      }
+                      setChange(2);
+                    }}
+                    className={` rounded-xl flex justify-center  items-center h-[35px] w-[150px] z-10 ${
+                      change === 2 ? "font-bold " : "cursor-pointer"
+                    }`}
+                  >
+                    Email
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* phone */}
             <div
               className={`${
                 change === 1
-                  ? "flex justify-start flex-col items-start pt-2"
+                  ? "flex justify-start flex-col w-full items-start pt-2"
                   : "hidden"
               } `}
             >
@@ -392,7 +384,7 @@ const Page = () => {
             <div
               className={`${
                 change === 2
-                  ? "flex justify-start flex-col items-start pt-2"
+                  ? "flex justify-start w-full flex-col items-start pt-2"
                   : "hidden"
               } `}
             >
@@ -419,7 +411,7 @@ const Page = () => {
         </div>
       </div>
       {/* Conditions */}
-      <div className="flex absolute bottom-3 w-[100%] flex-wrap justify-end items-center dark:text-white text-[#414141] gap-4 text-[12px] select-none ">
+      <div className="flex absolute bottom-3 pn:max-sm:hidden w-[100%] flex-wrap justify-end items-center dark:text-white text-[#414141] gap-4 text-[12px] select-none ">
         <div className="flex sm:bottom-3 w-[50%] pn:max-sm:w-full flex-wrap justify-center items-center dark:text-white text-[#414141] gap-4 text-[12px] select-none pn:max-sm:-mb-3">
           <Link href={"../terms"}>T&C</Link>
           <Link href={"../privacy"}>Privacy</Link>

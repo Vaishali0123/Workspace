@@ -5,17 +5,24 @@ import { FaInstagram, FaLinkedin, FaSnapchat } from "react-icons/fa";
 import { RiYoutubeLine } from "react-icons/ri";
 import { MdOutlineModeEdit } from "react-icons/md";
 import { useFetchSettingsQuery } from "@/app/redux/slices/settingApi";
-import { useSearchParams } from "next/navigation";
 // import { Cropper } from "react-cropper";
 import axios from "axios";
-import { API } from "@/app/utils/helpers";
+import { API, errorHandler } from "@/app/utils/helpers";
 import toast, { Toaster } from "react-hot-toast";
-
+import { useAuthContext } from "@/app/Auth/Components/auth";
+interface Address {
+  addressType: string;
+  houseNo: string;
+  streetAddress: string;
+  city: string;
+  state: string;
+  landmark: string;
+  pincode: string;
+}
 const PageContent = () => {
   const [click, setClick] = useState<number>(0);
-  const searchParams = useSearchParams();
-
-  const userId = searchParams.get("userId");
+  const { data: Authdata } = useAuthContext();
+  const userId = Authdata?.id;
   // const [cropData, setCropData] = useState<string>(""); // Holds the cropped image data
   // const cropperRef = React.useRef<HTMLImageElement>(null);
   // const cropperRef = useRef<HTMLImageElement & { cropper?: Cropper }>(null);
@@ -24,14 +31,18 @@ const PageContent = () => {
   const { data, isLoading } = useFetchSettingsQuery(userId, {
     skip: !!shouldSkip,
   });
-  // const [cropData, setCropData] = useState<string>("");
-  // const [showCropper, setShowCropper] = useState<boolean>(false);
-  // const [imageToCrop, setImageToCrop] = useState<string | null>(null);
-  // const cropperRef = React.useRef<HTMLImageElement>(null);
-  // const cropperRef = useRef<HTMLImageElement & { cropper?: Cropper }>(null);
+
+  const [address, setAddress] = useState<Address>({
+    addressType: "",
+    houseNo: "",
+    streetAddress: "",
+    city: "",
+    state: "",
+    landmark: "",
+    pincode: "",
+  });
   const [load, setLoad] = useState<boolean>(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
-
   // const handleCrop = () => {
   //   // Check if cropperRef.current exists and the cropper is initialized
   //   if (cropperRef.current && cropperRef.current.cropper) {
@@ -70,13 +81,12 @@ const PageContent = () => {
           "Content-Type": "multipart/form-data",
         },
       });
-      console.log(res?.data);
+
       if (res?.data?.success) {
         toast.success("Set Up Updated succesfully!");
       }
     } catch (e) {
-      console.log(e);
-      toast.error("Something went wrong");
+      errorHandler(e);
     }
     setLoad(false);
   };
@@ -128,6 +138,7 @@ const PageContent = () => {
       setX(data?.data?.x);
     }
   }, [isLoading, data]);
+
   return (
     <div className="bg-white w-full h-full px-2">
       <Toaster />
@@ -153,7 +164,7 @@ const PageContent = () => {
           {" "}
           Social Media
         </div>
-        <div
+        {/* <div
           className={`h-full flex items-center justify-center cursor-pointer duration-300 ${
             click === 2
               ? "font-semibold text-[#307fff] border-b-2 h-full flex border-[#307fff]"
@@ -162,7 +173,7 @@ const PageContent = () => {
           onClick={() => setClick(2)}
         >
           Address
-        </div>
+        </div> */}
       </div>
       {click === 0 ? (
         <div className="space-y-4 p-2 overflow-auto w-full">
@@ -340,38 +351,135 @@ const PageContent = () => {
         <></>
       )}
       {click === 2 ? (
-        <div className="flex p-2 flex-col">
-          <div>Address</div>
-          <div className="bg-white flex justify-evenly items-center  w-full">
-            <div className="w-[30%] border rounded-xl space-y-2 p-2">
-              <div className="text-[#6a6a6a] ">Store Address</div>
-
+        <div className="p-4">
+          <div className="flex flex-col gap-4">
+            {data?.data?.address?.map((item: Address, i: number) => (
+              <div key={i} className="w-full  bg-white p-4 rounded-xl border ">
+                <div className="text-[#6a6a6a] font-semibold mb-2">
+                  {item?.addressType} Address
+                </div>
+                <input
+                  value={item?.houseNo}
+                  onChange={(e) =>
+                    setAddress((prev) => ({ ...prev, houseNo: e.target.value }))
+                  }
+                  className="w-full px-3 py-2  border rounded-lg mb-2 outline-none"
+                  placeholder="House No."
+                />
+                <input
+                  value={item?.streetAddress}
+                  onChange={(e) =>
+                    setAddress((prev) => ({
+                      ...prev,
+                      streetAddress: e.target.value,
+                    }))
+                  }
+                  className="w-full px-3 py-2 border rounded-lg mb-2 outline-none"
+                  placeholder="Street Address"
+                />
+                <input
+                  value={item?.city}
+                  onChange={(e) =>
+                    setAddress((prev) => ({ ...prev, city: e.target.value }))
+                  }
+                  className="w-full px-3 py-2 border rounded-lg mb-2 outline-none"
+                  placeholder="City"
+                />
+                <input
+                  value={item?.state}
+                  onChange={(e) =>
+                    setAddress((prev) => ({ ...prev, state: e.target.value }))
+                  }
+                  className="w-full px-3 py-2 border rounded-lg mb-2 outline-none"
+                  placeholder="State"
+                />
+                <input
+                  value={item?.pincode}
+                  onChange={(e) =>
+                    setAddress((prev) => ({ ...prev, pincode: e.target.value }))
+                  }
+                  className="w-full px-3 py-2 border rounded-lg mb-2 outline-none"
+                  placeholder="Pincode"
+                />
+                <input
+                  value={item?.landmark}
+                  onChange={(e) =>
+                    setAddress((prev) => ({
+                      ...prev,
+                      landmark: e.target.value,
+                    }))
+                  }
+                  className="w-full px-3 py-2 border rounded-lg mb-2 outline-none"
+                  placeholder="Landmark"
+                />
+              </div>
+            ))}
+            {/* Add Address */}
+            {data?.data?.address?.length === 0 && (
+              <div className="w-full  bg-white p-4 rounded-xl border ">
+                <input
+                  value={address?.houseNo}
+                  onChange={(e) =>
+                    setAddress((prev) => ({ ...prev, houseNo: e.target.value }))
+                  }
+                  className="w-full px-3 py-2 border rounded-lg mb-2 outline-none"
+                  placeholder="House No."
+                />
+                <input
+                  className="w-full px-3 py-2 border rounded-lg mb-2 outline-none"
+                  placeholder="Street Address"
+                />
+                <input
+                  className="w-full px-3 py-2 border rounded-lg mb-2 outline-none"
+                  placeholder="City"
+                />
+                <input
+                  className="w-full px-3 py-2 border rounded-lg mb-2 outline-none"
+                  placeholder="State"
+                />
+                <input
+                  className="w-full px-3 py-2 border rounded-lg mb-2 outline-none"
+                  placeholder="Pincode"
+                />
+              </div>
+            )}
+            {data?.data?.address?.length > 0 && (
+              <button className="bg-blue-500 text-white p-2 rounded-lg">
+                Add Address
+              </button>
+            )}
+            <div className="w-full  bg-white p-4 rounded-xl border ">
               <input
-                className="px-2 outline-none w-[100%]"
+                className="w-full px-3 py-2 border rounded-lg mb-2 outline-none"
                 placeholder="House No."
               />
               <input
-                className="px-2 outline-none w-[100%]"
+                className="w-full px-3 py-2 border rounded-lg mb-2 outline-none"
+                placeholder="Street Address"
+              />
+              <input
+                className="w-full px-3 py-2 border rounded-lg mb-2 outline-none"
                 placeholder="City"
               />
               <input
-                className="px-2 outline-none w-[100%]"
+                className="w-full px-3 py-2 border rounded-lg mb-2 outline-none"
                 placeholder="State"
               />
-            </div>
-            <div className="w-[30%] border rounded-xl p-2">
-              <div className="text-[#6a6a6a] ">Home Address</div>
-            </div>
-
-            <div className="w-[30%] border rounded-xl p-2">
-              <div className="text-[#6a6a6a] ">Work Address</div>
+              <input
+                className="w-full px-3 py-2 border rounded-lg mb-2 outline-none"
+                placeholder="Pincode"
+              />
             </div>
           </div>
-          <div></div>
+
+          {/* <div className="flex justify-end mt-4">
+            <button className="bg-blue-600 text-white px-6 py-2 rounded-xl">
+              Save Address
+            </button>
+          </div> */}
         </div>
-      ) : (
-        <></>
-      )}
+      ) : null}
+
       <div className="flex gap-4 justify-end mt-4">
         <div
           className="bg-gray-300 text-gray-800 rounded-xl px-4 py-2"

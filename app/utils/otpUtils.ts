@@ -126,8 +126,8 @@ export const verifyOTP = async (number: string, otp: string) => {
 export const emailAuth = (email: string) => {
   return new Promise((resolve, reject) => {
     if (!window?.OTPlessSignin) {
-      console.error("OTPlessSignin is not initialized.");
-      toast.error("OTP service is not initialized.");
+      // console.error("OTPlessSignin is not initialized.");
+      toast.error("OTP is not initialized.");
       reject(new Error("OTPlessSignin not initialized"));
       return;
     }
@@ -151,7 +151,7 @@ export const emailAuth = (email: string) => {
 export const verifyEmailOTP = async (email: string, otp: string) => {
   try {
     if (!window?.OTPlessSignin) {
-      console.error("OTPlessSignin is not initialized.");
+      // console.error("OTPlessSignin is not initialized.");
       toast.error("OTP service is not initialized.");
       return;
     }

@@ -1,5 +1,5 @@
 "use client";
-import React, { Suspense, useCallback, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { PiClipboardText } from "react-icons/pi";
 import { BsPeople } from "react-icons/bs";
@@ -114,6 +114,16 @@ const PageContent = () => {
   const [collectionData, setCollectionData] = useState([]);
   const { data: authdata } = useAuthContext();
   const userId = authdata?.id;
+  const [highlight, setHighlight] = useState(false);
+
+  const handleRegisterClick = () => {
+    if (!onecom || post === 0) {
+      setHighlight(true);
+      setTimeout(() => setHighlight(false), 1500); // Remove highlight after animation
+    } else {
+      setPop(true);
+    }
+  };
 
   const isStoreVerified = authdata?.isStoreVerified;
   const storeid = authdata?.storeid;
@@ -121,7 +131,7 @@ const PageContent = () => {
   const { data, isLoading } = useFetchEarnWithUsQuery(userId, {
     skip: !!shouldSkip,
   });
-  const [load, setLoad] = useState(true);
+  const [load, setLoad] = useState(false);
   const { onecom, post } = useSelector((state: RootState) => state.paramslice);
   // const [location, setLocation] = useState({
   //   latitude: null,
@@ -267,7 +277,7 @@ const PageContent = () => {
 
   return (
     <>
-      {load ? (
+      {isLoading || load ? (
         <Load />
       ) : !isStoreVerified ? (
         <div className="w-full h-full rounded-2xl overflow-hidden relative">
@@ -289,41 +299,68 @@ const PageContent = () => {
                       creating and contributing at least one post in the
                       community.
                     </div>
-                    <div className="space-y-1 w-full">
-                      <div className="flex justify-between font-semibold">
-                        <div className="text-[12px]">Create Your Community</div>
-                        {/* <div className="text-[12px]">1</div> */}
+                    <div
+                      className={`space-y-1 w-full transition-all ${
+                        highlight && !onecom ? "animate-highlight" : ""
+                      }`}
+                    >
+                      <div className="flex justify-between ">
+                        <div
+                          className={`${
+                            highlight &&
+                            !onecom &&
+                            "text-blue-600 font-semibold"
+                          } text-[12px]
+                          `}
+                        >
+                          Create Your Community
+                        </div>
                       </div>
                       <div className="relative w-full h-[10px] bg-gray-100 rounded-full">
                         <div
                           className={`absolute top-0 left-0 h-full ${
                             !onecom ? "w-[0%]" : "w-[100%]"
-                          }  bg-green-500 rounded-full`}
+                          } ${
+                            highlight && "bg-gray-500"
+                          } bg-green-500 rounded-full`}
                         ></div>
                       </div>
                     </div>
-                    <div className="space-y-1 w-full">
-                      <div className="flex justify-between font-semibold">
-                        <div className="text-[12px]">
-                          Share a Post in your communities
+
+                    <div
+                      className={`space-y-1 w-full transition-all ${
+                        highlight && post === 0 ? "animate-highlight" : ""
+                      }`}
+                    >
+                      <div className="flex justify-between">
+                        <div
+                          className={`${
+                            highlight &&
+                            post === 0 &&
+                            "text-blue-600 font-semibold"
+                          } text-[12px]`}
+                        >
+                          Share a Post in your Community
                         </div>
-                        {/* <div className="text-[12px]">{post}</div>s */}
                       </div>
                       <div className="relative w-full h-[10px] bg-gray-100 rounded-full">
                         <div
                           className={`absolute top-0 left-0 h-full ${
                             post === 0 ? "w-[0%]" : "w-[100%]"
-                          } bg-green-500 rounded-full`}
+                          } ${
+                            highlight && "bg-gray-500"
+                          }   bg-green-500 rounded-full`}
                         ></div>
                       </div>
                     </div>
+
                     <div className="space-y-1 pt-1 flex justify-end w-full">
                       <button
-                        disabled={!onecom || post === 0}
-                        onClick={() => setPop(true)}
+                        // disabled={!onecom || post === 0}
+                        onClick={handleRegisterClick}
                         className={`flex items-center font-semibold gap-1 rounded-xl w-full justify-center px-4 py-2 text-[12px] ${
-                          onecom && post > 0 ? "bg-blue-600 " : "bg-slate-400 "
-                        } bg-blue-600 text-white`}
+                          onecom && post > 0 ? "bg-blue-600" : "bg-slate-400"
+                        } text-white`}
                       >
                         Register Store
                       </button>
@@ -816,11 +853,11 @@ const PageContent = () => {
     </>
   );
 };
-const Page = () => {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <PageContent />
-    </Suspense>
-  );
-};
-export default Page;
+// const Page = () => {
+//   return (
+//     <Suspense fallback={<div>Loading...</div>}>
+//       <PageContent />
+//     </Suspense>
+//   );
+// };
+export default PageContent;

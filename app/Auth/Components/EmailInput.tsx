@@ -1,4 +1,5 @@
 import React from "react";
+import { RiLoaderLine } from "../../utils/comimports";
 
 const EmailInput = ({
   email,
@@ -13,7 +14,7 @@ const EmailInput = ({
 }) => {
   return (
     <div className="flex w-full flex-col gap-6">
-      <div className="flex flex-col px-2 gap-2  ">
+      <div className="flex flex-col px-2 gap-2 w-full ">
         <div className="bg-white border rounded-xl text-[14px] p-2 w-full">
           <div className="text-[#6a6a6a]">Email Address</div>
           <input
@@ -21,7 +22,7 @@ const EmailInput = ({
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="px-2 outline-none w-full"
-            placeholder="adcxxx@mail.com"
+            placeholder="abc@mail.com"
           />
         </div>
         <div className="mt-1 px-2 text-[14px] text-[#6a6a6a]">
@@ -33,9 +34,13 @@ const EmailInput = ({
         <button
           disabled={loading || !email}
           onClick={sendEmailOtp}
-          className="bg-black text-white w-full font-semibold flex justify-center items-center h-12 rounded-2xl"
+          className="bg-black text-white w-full font-medium cursor-pointer active:bg-[#171717] hover:bg-[#2e2e2e] flex justify-center items-center h-12 rounded-2xl"
         >
-          {loading ? "Loading..." : "Continue"}
+          {loading ? (
+            <RiLoaderLine size={20} className="animate-spin" />
+          ) : (
+            "Continue"
+          )}
         </button>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { IoSettingsOutline } from "react-icons/io5";
 import { IoStorefrontOutline } from "react-icons/io5";
 import { MdOutlineAnalytics } from "react-icons/md";
 import { RiMoneyRupeeCircleLine } from "react-icons/ri";
+import { CgWebsite } from "react-icons/cg";
 import { FiUsers } from "react-icons/fi";
 import Logo from "../../assets/Logo";
 import Cookies from "js-cookie";
@@ -31,7 +32,15 @@ const Navbar = ({ path }: { path: string }) => {
   //   }
   // };
   // useEffect(() => {});
-
+  const handleRedirect = () => {
+    const query = new URLSearchParams({
+      user: data?.username || "guest",
+      id: data?.id || "",
+    }).toString();
+    console.log("loading");
+    // router.push(`http://localhost:3001/main?${query}`);
+    window.open(`https://prosite.grovyo.com/main?${query}`, "_blank");
+  };
   const logout = async (): Promise<void> => {
     toast.success("Log Out Successfully!");
     Cookies.remove("token");
@@ -41,7 +50,7 @@ const Navbar = ({ path }: { path: string }) => {
   return (
     <>
       {pop && (
-        <div className="fixed inset-0 w-screen h-screen bg-[#1d1d1d31] flex justify-center items-center ">
+        <div className="fixed inset-0  w-screen h-screen bg-[#1d1d1d31] flex justify-center items-center ">
           <div className="md:w-1/3 rounded-lg shadow-lg  bg-white my-3">
             <div className="flex justify-between border-b border-gray-100 px-5 py-4">
               <div>
@@ -80,7 +89,9 @@ const Navbar = ({ path }: { path: string }) => {
       <div className="h-full pn:max-md:px-2 bg-white pn:max-sm:border-t pn:max-sm:fixed pn:max-sm:bottom-0 pn:max-sm:w-full pn:max-sm:h-[60px] sm:border-r-[1px] pn:max-sm:p-2 md:p-4 flex sm:flex-col justify-between text-[#2b2b2b]">
         <div className="h-[50%] pn:max-sm:h-full pn:max-sm:rounded-2xl pn:max-sm:p-2 pn:max-sm:w-full flex sm:flex-col pn:max-sm:items-center justify-between">
           <div className="flex pn:max-sm:hidden pn:max-md:items-center pn:max-md:p-2 pn:max-md:w-full  pn:max-md:justify-center md:pl-4 gap-2">
-            <Logo />
+            <div className="h-9 w-9">
+              <Logo />
+            </div>
             <div className="pn:max-md:hidden">
               <div className="text-[22px] font-semibold flex">
                 <p className="text-[#38f]">Work</p>space
@@ -174,6 +185,27 @@ const Navbar = ({ path }: { path: string }) => {
                 Earnings
               </div>
             </Link>
+            <button
+              onClick={handleRedirect}
+              // href={{
+              //   pathname: "/main/Earnwithus",
+              //   query: {
+              //     userId: userId,
+              //   },
+              // }}
+              className={`sm:w-full rounded-2xl duration-100 pn:max-md:flex-col hover:bg-slate-50 sm:py-2 pn:max-sm:h-[40px] pn:max-sm:w-[40px] md:pl-4 items-center pn:max-sm:text-[10px] pn:max-sm:flex-col flex gap-1 sm:gap-2 
+                "border border-white"
+              `}
+            >
+              <CgWebsite className="text-xl  " />
+              <div className="pn:max-md:text-[12px] pn:max-md:hidden pn:max-md:font-semibold">
+                Prosite
+              </div>
+              <div className="pn:max-md:text-[12px] md:hidden pn:max-md:font-semibold">
+                Prosite
+              </div>
+            </button>
+
             <Link
               href={{
                 pathname: "/main/SetUp",

@@ -205,7 +205,7 @@ const PageContent = () => {
       );
 
       const { presignedUrls, postContent } = presignedResponse.data;
-
+      console.log("postupload");
       // Step 2: Upload to S3 using Presigned URLs
       await Promise.all(
         postFiles.map(async (file, index) => {
