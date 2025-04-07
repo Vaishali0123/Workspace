@@ -40,7 +40,7 @@ export interface UserData {
   username: string;
   id: string;
   isverified: boolean;
-  isStoreVerified: boolean;
+  isStoreVerified: boolean | string;
   storeid: string;
 }
 

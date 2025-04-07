@@ -1,5 +1,4 @@
 "use client";
-
 import React, { Suspense, useEffect, useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import axios from "axios";
@@ -276,18 +275,18 @@ const PageContent: React.FC = () => {
                   >
                     <div className="flex items-center  justify-between w-full">
                       <div className="flex items-center w-[50%] gap-2">
-                        <div className="h-[100px] w-[100px] rounded-[4px] border border-dashed flex items-center justify-center">
+                        <div className="h-[100px] w-[150px] rounded-[4px] border border-dashed flex items-center justify-center">
                           {d?.post?.[0]?.type === "video/mp4" ? (
                             <img
                               alt="dps"
                               src={d?.post?.[d?.post?.length - 1]?.thumbnail}
-                              className=" bg-contain bg-slate-400 h-[94px] rounded-[4px] w-[94px]"
+                              className=" object-contain h-[94px] rounded-[10px] w-[194px]"
                             />
                           ) : (
                             <img
                               alt="dps"
                               src={d?.post?.[0]?.content}
-                              className=" bg-contain bg-slate-400 h-[94px] rounded-[4px] w-[94px]"
+                              className=" object-contain bg-slate-50 h-[94px] rounded-[10px] w-[194px]"
                             />
                           )}
                         </div>
@@ -305,13 +304,13 @@ const PageContent: React.FC = () => {
                         {d?.likes}
                       </div>
                       <div className="w-[20%] text-center text-[12px] pn:max-sm:hidden">
-                        {d?.analytics[0]?.views}
+                        {d?.analytics[0]?.views || 0}
                       </div>
                       <div className="w-[20%] text-center text-[12px] pn:max-sm:hidden">
                         {d?.commentcount}
                       </div>
                       <div className="w-[30%] text-center text-[12px] pn:max-sm:hidden text-green-600">
-                        47.59%
+                        0%
                       </div>
                       <div
                         onClick={() => {
@@ -330,28 +329,27 @@ const PageContent: React.FC = () => {
                       <div className="w-[100%] bg-white border rounded-2xl space-y-2 p-2 text-[12px]">
                         <div className="">Post</div>
                         <div className="w-full text-center">
-                          {d?.analytics[0]?.views}
+                          {d?.analytics[0]?.views} || 0
                         </div>
                       </div>
                       <div className="w-[100%] bg-white border rounded-2xl space-y-2 p-2 text-[12px]">
                         <div className="">Member</div>
                         <div className="w-full text-center">
-                          {" "}
                           {d?.commentcount}
                         </div>
                       </div>
                       <div className="w-[100%] bg-white border rounded-2xl space-y-2 p-2 text-[12px]">
                         <div className="">Engagement rate</div>
                         <div className="text-green-600 text-center w-full">
-                          47.59%
+                          0%
                         </div>
                       </div>
                     </div>
                     {selectedPost === d._id ? (
                       <div className="absolute  w-[120px] bg-white top-[25%] right-0 border shadow-lg rounded-2xl py-2 z-10">
-                        <button className="w-full px-4 py-2 text-sm hover:bg-gray-100 font-semibold">
+                        {/* <button className="w-full px-4 py-2 text-sm hover:bg-gray-100 font-semibold">
                           Edit
-                        </button>
+                        </button> */}
                         <button
                           onClick={() => deletePost(d._id)} // Pass post ID here
                           className="w-full px-4 py-2 text-sm hover:bg-gray-100 font-semibold"

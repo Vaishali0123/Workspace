@@ -13,7 +13,7 @@ import { RiLoader2Line } from "react-icons/ri";
 import { FaAsterisk, FaPlus } from "react-icons/fa6";
 import toast from "react-hot-toast";
 import { setIfCode } from "@/app/redux/slices/userSlice";
-import { LuCircleCheckBig } from "react-icons/lu";
+import { LuCircleCheckBig, LuCirclePlus } from "react-icons/lu";
 import { useFetchEarnWithUsQuery } from "@/app/redux/slices/earnwithusApi";
 import { useAuthContext } from "@/app/Auth/Components/auth";
 import { useSelector } from "react-redux";
@@ -22,6 +22,14 @@ import Load from "../Components/Load";
 // import { FiShoppingBag } from "react-icons/fi";
 // import { MdPendingActions } from "react-icons/md";
 
+// Built-in TypeScript type
+type LocationType = GeolocationCoordinates;
+
+type BankingDetailsType = {
+  IFSC: string;
+  accholdername: string;
+  AccountNo: string;
+};
 interface Products {
   name: string;
   orderscount: number;
@@ -37,59 +45,6 @@ interface Collection {
   _id: string;
   products: Products[];
 }
-// const useLocation = () => {
-//   const [location, setLocation] = useState<{
-//     latitude: number;
-//     longitude: number;
-//   } | null>(null);
-//   const [locationError, setLocationError] = useState<string | null>(null);
-
-//   useEffect(() => {
-//     if (!navigator.geolocation) {
-//       setLocationError("Geolocation is not supported by your browser");
-//       return;
-//     }
-
-//     navigator.permissions
-//       .query({ name: "geolocation" })
-//       .then((permissionStatus) => {
-//         if (permissionStatus.state === "granted") {
-//           getLocation();
-//         } else if (permissionStatus.state === "prompt") {
-//           navigator.geolocation.getCurrentPosition(
-//             (position) => {
-//               setLocation({
-//                 latitude: position.coords.latitude,
-//                 longitude: position.coords.longitude,
-//               });
-//             },
-//             (error) => {
-//               setLocationError(error.message);
-//             }
-//           );
-//         } else {
-//           setLocationError("Location permission denied");
-//         }
-//       })
-//       .catch((err) => setLocationError(err.message));
-//   }, []);
-
-//   const getLocation = () => {
-//     navigator.geolocation.getCurrentPosition(
-//       (position) => {
-//         setLocation({
-//           latitude: position.coords.latitude,
-//           longitude: position.coords.longitude,
-//         });
-//       },
-//       (error) => {
-//         setLocationError(error.message);
-//       }
-//     );
-//   };
-
-//   return { location, locationError };
-// };
 
 const PageContent = () => {
   const [collectionres, setCollectionres] = useState(false);
@@ -114,8 +69,14 @@ const PageContent = () => {
   const [collectionData, setCollectionData] = useState([]);
   const { data: authdata } = useAuthContext();
   const userId = authdata?.id;
-  const [highlight, setHighlight] = useState(false);
 
+  const [highlight, setHighlight] = useState(false);
+  const [location, setLocation] = useState<LocationType>();
+  const [bankingdetails, setBankingDetails] = useState<BankingDetailsType>({
+    IFSC: "",
+    accholdername: "",
+    AccountNo: "",
+  });
   const handleRegisterClick = () => {
     if (!onecom || post === 0) {
       setHighlight(true);
@@ -133,12 +94,6 @@ const PageContent = () => {
   });
   const [load, setLoad] = useState(false);
   const { onecom, post } = useSelector((state: RootState) => state.paramslice);
-  // const [location, setLocation] = useState({
-  //   latitude: null,
-  //   longitude: null,
-  //   accuracy: null,
-  // });
-  // const [locationError, setLocationError] = useState<string | null>(null);
   useEffect(() => {
     if (data) {
       setShouldSkip(true);
@@ -188,19 +143,49 @@ const PageContent = () => {
       console.error("Error fetching postal details", e);
     }
   };
+
+  useEffect(() => {
+    if (isStoreVerified || isStoreVerified === "pending" || !ifCode) {
+      return;
+    }
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLocation(position?.coords);
+        },
+        (error) => {
+          console.log(error);
+        }
+      );
+    } else {
+    }
+  }, [isStoreVerified, ifCode]);
   // Register store
   const registerstore = async () => {
-    // if (!location) {
-    //   toast.error("Location is required to register store");
-    //   return;
-    // }
+    if (!location) {
+      toast.error("Location is required to register store");
+      return;
+    }
     try {
       setLoading(true);
-      if (!docs || !docimage || !state || !city || !houseNo || !data) {
+      if (
+        !docs ||
+        !docimage ||
+        !state ||
+        !city ||
+        !houseNo ||
+        !data ||
+        !bankingdetails?.IFSC ||
+        !bankingdetails?.accholdername ||
+        !bankingdetails?.AccountNo
+      ) {
         toast.error("Please Enter Required Details");
         return;
       }
-
+      if (!location) {
+        toast.error("Please allow location permission.");
+        return;
+      }
       const formData = new FormData();
       formData.append("houseNo", houseNo);
       formData.append("pincode", pincode);
@@ -210,6 +195,8 @@ const PageContent = () => {
       formData.append("city", city);
       formData.append("docs", docs);
       formData.append("storepic", docimage || "");
+      formData.append("location", JSON.stringify(location));
+      formData.append("bankingdetails", JSON.stringify(bankingdetails));
 
       const response = await axios.post(
         `${API}/registerstore/${userId}`,
@@ -218,6 +205,7 @@ const PageContent = () => {
       if (response.status === 200) {
         setPop(false);
         dispatch(setIfCode(false));
+
         toast.success("Successfully registered store");
       }
     } catch (error) {
@@ -279,20 +267,27 @@ const PageContent = () => {
     <>
       {isLoading || load ? (
         <Load />
-      ) : !isStoreVerified ? (
+      ) : !isStoreVerified || isStoreVerified === "pending" ? (
         <div className="w-full h-full rounded-2xl overflow-hidden relative">
           {/* register store  */}
-          {ifCode ? (
+          {ifCode && isStoreVerified != "pending" ? (
             <>
               <div className=" w-full  rounded-2xl space-y-2 flex items-center flex-col justify-center h-[100%] p-2">
-                <div className="border rounded-2xl space-y-2  gap-2 p-2 w-[40%] bg-white">
-                  <div className="rounded-xl bg-red-50 p-4 flex gap-2 items-end">
-                    <IoStorefrontOutline className="text-red-600 text-[25px]" />
-                    <div className="text-[14px] text-[#667085]">
-                      Ready to setup your store! Here&apos;s Your 3-Step Guide
+                <div className="">
+                  <div className="rounded-xl items-center p-4 flex gap-2 ">
+                    <IoStorefrontOutline className="text-[25px]" />
+
+                    <div className="text-[25px] font-semibold">
+                      Get ready to sell
                     </div>
                   </div>
-                  <div className="text-[#667085] space-y-2 font-semibold ">
+                  <div className="text-[12px] text-gray-500">
+                    Here&apos;s a guide to get started. As your business grows,
+                    you&apos;ll get fresh tips and insights here.
+                  </div>
+                </div>
+                <div className="border rounded-2xl space-y-2  gap-2 p-4 w-[50%] bg-white">
+                  <div className="text-[#667085] space-y-2  ">
                     <div className="text-[12px] text-gray-500 ">
                       To be eligible for creating a store or uploading products,
                       users must first establish a community presence by
@@ -353,18 +348,61 @@ const PageContent = () => {
                         ></div>
                       </div>
                     </div>
-
-                    <div className="space-y-1 pt-1 flex justify-end w-full">
-                      <button
-                        // disabled={!onecom || post === 0}
-                        onClick={handleRegisterClick}
-                        className={`flex items-center font-semibold gap-1 rounded-xl w-full justify-center px-4 py-2 text-[12px] ${
-                          onecom && post > 0 ? "bg-blue-600" : "bg-slate-400"
-                        } text-white`}
-                      >
-                        Register Store
-                      </button>
+                  </div>
+                  <div className="text-[18px] font-semibold">Setup store</div>
+                  <div className="text-[12px] text-gray-500">
+                    Use this personalized guide to get your store up and running
+                  </div>
+                  <div className="text-[12px] p-1 px-4 rounded-xl w-fit border">
+                    0/3 completed
+                  </div>
+                  <div className="flex text-[12px] font-semibold bg-slate-50 p-2 flex-col gap-1 w-full">
+                    Set up guide to get your store up and running
+                  </div>
+                  <div className="flex justify-between">
+                    <div className="flex items-center gap-2 p-2 text-[14px] rounded-lg bg-white w-full">
+                      {/* <FaRegCircleCheck /> */}
+                      <LuCirclePlus />
+                      Start with registering and verifying .
                     </div>
+
+                    <div
+                      onClick={handleRegisterClick}
+                      className={`"flex items-center gap-2 px-4 p-1 hover:bg-slate-50  select-none cursor-pointer  text-[12px] text-center w-fit border rounded-xl bg-white" ${
+                        onecom && post > 0
+                          ? "bg-blue-600 text-white"
+                          : "bg-slate-50"
+                      }`}
+                    >
+                      Register now
+                    </div>
+                  </div>
+                  <div className="flex justify-between">
+                    <div className="flex items-center gap-2 p-2 text-[14px] rounded-lg bg-white w-full">
+                      {/* <FaRegCircleCheck /> */}
+                      <LuCirclePlus />
+                      Create Collection
+                    </div>
+                    {/* <div className="flex items-center gap-2 p-2 text-[12px] w-fit border rounded-xl bg-white">
+                      register now
+                    </div> */}
+                  </div>
+                  <div className="flex justify-between">
+                    <div className="flex items-center gap-2 p-2 text-[14px] rounded-lg bg-white w-full">
+                      {/* <FaRegCircleCheck /> */}
+                      <LuCirclePlus />
+                      Add your first product
+                    </div>
+                    {/* <div className="flex items-center gap-2 p-2 text-[12px] w-fit border rounded-xl bg-white">
+                      register now
+                    </div> */}
+                  </div>
+                  <div className="flex items-center gap-2 p-2  text-[11px] text-[#363636] rounded-lg bg-white w-full">
+                    Check Out our
+                    <a className="text-blue-600 cursor-pointer ">
+                      term & conditions
+                    </a>
+                    for store
                   </div>
                 </div>
               </div>
@@ -373,14 +411,14 @@ const PageContent = () => {
                 className={`duration-100 ${
                   pop === false
                     ? "w-[0%] h-[0%]"
-                    : "flex absolute top-0 border bottom-0 rounded-2xl  right-0 left-0 w-full justify-center pn:max-vs:text-sm items-center h-full "
+                    : "flex absolute overflow-auto top-0 border bottom-0 rounded-2xl  right-0 left-0 w-full justify-center pn:max-vs:text-sm items-center h-full "
                 }`}
               >
                 <div
                   className={` duration-500 ${
                     pop === false
                       ? " opacity-0"
-                      : "bg-white opacity-100 h-full p-3 w-full rounded-lg "
+                      : "bg-white opacity-100 h-full p-3 w-full rounded-2xl "
                   }`}
                 >
                   <div className="flex justify-between border-b pb-2 items-center">
@@ -408,6 +446,7 @@ const PageContent = () => {
                         </button>
                       ) : (
                         <button
+                          disabled={loading}
                           className=" p-2 px-4 text-center rounded-xl bg-[#5570F1] text-white"
                           onClick={registerstore}
                         >
@@ -546,6 +585,67 @@ const PageContent = () => {
                         }
                       />
                     </div>
+                    {/* Banking Details */}
+                    <div className="text-black font-semibold text-[16px]">
+                      Banking Details:
+                    </div>
+                    {/* Bank Name */}
+                    <div className="flex flex-col gap-1 w-full">
+                      <div className="text-sm flex gap-1 items-center font-medium">
+                        Bank Account No.
+                        <FaAsterisk className="text-[10px] text-red-800" />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Account Number"
+                        className="border outline-none p-2 rounded-lg"
+                        value={bankingdetails?.AccountNo}
+                        onChange={(e) =>
+                          setBankingDetails({
+                            ...bankingdetails,
+                            AccountNo: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    {/* IFSC */}
+                    <div className="flex flex-col gap-1 w-full">
+                      <div className="text-sm flex gap-1 items-center font-medium">
+                        IFSC
+                        <FaAsterisk className="text-[10px] text-red-800" />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="IFSC code"
+                        className="border outline-none p-2 rounded-lg"
+                        value={bankingdetails?.IFSC}
+                        onChange={(e) =>
+                          setBankingDetails({
+                            ...bankingdetails,
+                            IFSC: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    {/* Account Holder Name */}
+                    <div className="flex flex-col gap-1 w-full">
+                      <div className="text-sm flex gap-1 items-center font-medium">
+                        Account Holder&apos;s Name
+                        <FaAsterisk className="text-[10px] text-red-800" />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Account Holder's Name"
+                        className="border outline-none p-2 rounded-lg"
+                        value={bankingdetails?.accholdername}
+                        onChange={(e) =>
+                          setBankingDetails({
+                            ...bankingdetails,
+                            accholdername: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -554,12 +654,13 @@ const PageContent = () => {
             <>
               <div className=" w-full rounded-2xl space-y-2 flex items-center flex-col justify-center h-[100%] p-2">
                 <div className="border rounded-2xl space-y-2  gap-2 p-2 w-[40%] bg-white">
-                  <div className="rounded-xl bg-red-50 p-4 flex gap-2 jcenter items-center">
+                  <div className="rounded-xl bg-red-50 p-4 flex gap-2 justify-center items-center">
                     <IoStorefrontOutline className="text-red-600 text-[25px]" />
                   </div>
                   <div className="text-[#667085] space-y-2 font-semibold ">
-                    <div className="text-[12px] text-gray-500 ">
-                      Please give us 24 hours to verify your store.
+                    <div className="text-[14px] text-gray-500 text-center ">
+                      Please give us 24 hours to verify your store registration
+                      request.
                     </div>
                   </div>
                 </div>
@@ -618,7 +719,7 @@ const PageContent = () => {
                 </div>
                 <Link
                   href={"/main/OrderTrack"}
-                  className="bg-[#6D83F3] text-white hover:bg-[#bfd6ff] cursor-pointer font-semibold rounded-[12px] px-6 py-3 flex justify-center items-center"
+                  className="bg-[#6D83F3] text-white hover:bg-[#bfd6ff] active:bg-[#8194f4] cursor-pointer font-semibold rounded-[12px] px-6 py-3 flex justify-center items-center"
                 >
                   View Analytics
                 </Link>

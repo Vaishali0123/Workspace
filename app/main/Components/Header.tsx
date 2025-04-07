@@ -77,7 +77,7 @@ const Header: React.FC<HeaderProps> = ({ path, data }) => {
         </div>
       )}
       <Toaster position="top-center" reverseOrder={false} />
-      <div className="h-full bg-white w-full sm:rounded-2xl border flex items-center justify-between px-2">
+      <div className="h-full bg-white w-full sm:rounded-2xl  border border-dotted flex items-center justify-between px-2">
         {path === "/main/Overview" && (
           <div className="flex items-center justify-between w-full">
             <div className="text-[20px] font-semibold text-slate-500">

@@ -6,7 +6,10 @@ export const storeAnalyticsApi = createApi({
   baseQuery: fetchBaseQuery({ baseUrl: `${API}` }),
   endpoints: (builder) => ({
     fetchStoreAnalytics: builder.query({
-      query: (userId) => `/trackSellerOrder/${userId}`,
+      query: ({ userId, nav }) => ({
+        url: `/trackSellerOrder/${userId}`,
+        params: { nav },
+      }),
     }),
   }),
 });

@@ -52,7 +52,7 @@ const Navbar = ({ path }: { path: string }) => {
       {pop && (
         <div className="fixed inset-0  w-screen h-screen bg-[#1d1d1d31] flex justify-center items-center ">
           <div className="md:w-1/3 rounded-lg shadow-lg  bg-white my-3">
-            <div className="flex justify-between border-b border-gray-100 px-5 py-4">
+            <div className="flex justify-between border-b  px-5 py-4">
               <div>
                 <span className="font-bold text-gray-700 text-lg">
                   Sign Out
@@ -86,7 +86,7 @@ const Navbar = ({ path }: { path: string }) => {
           </div>
         </div>
       )}
-      <div className="h-full pn:max-md:px-2 bg-white pn:max-sm:border-t pn:max-sm:fixed pn:max-sm:bottom-0 pn:max-sm:w-full pn:max-sm:h-[60px] sm:border-r-[1px] pn:max-sm:p-2 md:p-4 flex sm:flex-col justify-between text-[#2b2b2b]">
+      <div className="h-full pn:max-md:px-2 bg-white pn:max-sm:border-t pn:max-sm:fixed border-dotted pn:max-sm:bottom-0 pn:max-sm:w-full pn:max-sm:h-[60px] sm:border-r-[1px] pn:max-sm:p-2 md:p-4 flex sm:flex-col justify-between text-[#2b2b2b]">
         <div className="h-[50%] pn:max-sm:h-full pn:max-sm:rounded-2xl pn:max-sm:p-2 pn:max-sm:w-full flex sm:flex-col pn:max-sm:items-center justify-between">
           <div className="flex pn:max-sm:hidden pn:max-md:items-center pn:max-md:p-2 pn:max-md:w-full  pn:max-md:justify-center md:pl-4 gap-2">
             <div className="h-9 w-9">
