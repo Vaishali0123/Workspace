@@ -187,9 +187,9 @@ const PageContent = () => {
         postFiles.map(async (file, index) => {
           try {
             await axios.put(presignedUrls[index], file, {
-              headers: {
-                "Content-Type": file.type,
-              },
+              // headers: {
+              //   "Content-Type": file.type,
+              // },
               onUploadProgress: (progressEvent) => {
                 if (progressEvent?.total) {
                   setUploadProgress((prev) => {
@@ -210,13 +210,16 @@ const PageContent = () => {
               return updatedSuccess;
             });
           } catch (uploadError) {
-            console.log(uploadError);
-            toast.error("File upload error:");
+             console.log(uploadError);
+            toast.error("File upload error.Please try again later");
+
             setUploadError((prev) => {
               const updatedErrors = [...prev];
               updatedErrors[index] = `Failed to upload ${file.name}`;
               return updatedErrors;
             });
+            // router.back();
+            return;
           }
         })
       );

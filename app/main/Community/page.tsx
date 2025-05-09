@@ -506,12 +506,16 @@ const PageContent = () => {
                     className="absolute w-full bg-[#4442420c] pt-10 h-full flex justify-end right-0 bottom-0 z-10"
                   >
                     <div className=" w-[120px] h-fit  absolute bg-white right-0 border shadow-lg rounded-2xl py-2 z-10">
-                      {/* <Link
-                      href={`../main/CreateCommunity?userId=${userId}&comId=${d._id}`}
-                      className="w-full px-4 py-2 text-sm hover:bg-gray-100 flex items-center justify-center font-semibold"
-                    >
-                      Edit
-                    </Link> */}
+                      <Link
+                        // href={`../main/EditCommunity?comId=${d._id}`}
+                        href={{
+                          pathname: "../main/EditCommunity",
+                          query: { comId: d._id, comdata: JSON.stringify(d) },
+                        }}
+                        className="w-full px-4 py-2 text-sm hover:bg-gray-100 flex items-center justify-center font-semibold"
+                      >
+                        Edit
+                      </Link>
                       <button
                         disabled={loading}
                         onClick={() => deleteCommunity(d._id)} // Pass community ID here

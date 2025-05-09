@@ -13,6 +13,8 @@ import { useRouter } from "next/navigation";
 // import Cookies from "js-cookie";
 import toast from "react-hot-toast";
 import { useAuthContext } from "@/app/Auth/Components/auth";
+import Upgrade from "../../assets/image/Upgrade.png";
+import Image from "next/image";
 
 const Navbar = ({ path }: { path: string }) => {
   const [pop, setPop] = useState<boolean>(false);
@@ -22,6 +24,7 @@ const Navbar = ({ path }: { path: string }) => {
   // const [click, setClick] = useState(0);
   const openPopup = (): void => setPop(true);
   const closePopup = (): void => setPop(false);
+  // const [showPlans, setShowPlans] = useState(false);
   // const [userData, setUserData] = useState(null);
   // const fetchUserData = async () => {
   //   try {
@@ -40,6 +43,7 @@ const Navbar = ({ path }: { path: string }) => {
     console.log("loading");
     // router.push(`http://localhost:3001/main?${query}`);
     window.open(`https://prosite.grovyo.com/main?${query}`, "_blank");
+    // window.open(`http://localhost:3000/main?${query}`, "_blank");
   };
   const logout = async (): Promise<void> => {
     toast.success("Log Out Successfully!");
@@ -50,8 +54,8 @@ const Navbar = ({ path }: { path: string }) => {
   return (
     <>
       {pop && (
-        <div className="fixed inset-0  w-screen h-screen bg-[#1d1d1d31] flex justify-center items-center ">
-          <div className="md:w-1/3 rounded-lg shadow-lg  bg-white my-3">
+        <div className="fixed inset-0 z-50 w-screen h-screen bg-[#1d1d1d31] flex justify-center items-center ">
+          <div className="md:w-1/3 rounded-[20px] shadow-lg  bg-white my-3">
             <div className="flex justify-between border-b  px-5 py-4">
               <div>
                 <span className="font-bold text-gray-700 text-lg">
@@ -179,7 +183,7 @@ const Navbar = ({ path }: { path: string }) => {
             >
               <RiMoneyRupeeCircleLine className="text-xl  " />
               <div className="pn:max-md:text-[12px] pn:max-md:hidden pn:max-md:font-semibold">
-                Earn with Grovyo
+                Earn with Us
               </div>
               <div className="pn:max-md:text-[12px] md:hidden pn:max-md:font-semibold">
                 Earnings
@@ -226,13 +230,47 @@ const Navbar = ({ path }: { path: string }) => {
             </Link>
           </div>
         </div>
-        <div
-          onClick={openPopup}
-          className="w-full rounded-2xl pn:max-md:flex-col pn:max-sm:hidden duration-100 hover:bg-red-600 hover:text-white py-2 md:pl-4 text-red-600 items-center flex gap-2"
-        >
-          <IoMdLogOut className="text-xl" />
-          <div className="pn:max-md:text-[12px] pn:max-md:font-semibold">
-            Log Out
+
+        <div className="flex flex-col gap-2">
+          {/* Upgrade  */}
+          <Link
+            href={"../../membership"}
+            // onClick={() => setShowPlans(true)}
+            className="pn:max-sm:hidden cursor-pointer hover:opacity-[90%] relative w-full flex"
+          >
+            <Image
+              src={Upgrade}
+              alt="upgrade"
+              className="w-full rounded-[20px]"
+            />
+
+            <div className="absolute top-0 left-0 w-full h-full  flex items-center justify-between px-3">
+              {/* Left Side: Upgrade Text */}
+              <div className="text-[12px] text-white font-medium flex items-center gap-1">
+                Upgrade to
+                <span className="text-[14px] text-yellow-500 font-semibold ml-1">
+                  Premium
+                </span>
+              </div>
+
+              {/* Right Side: Free Button */}
+              <div className="bg-white px-4 py-2 text-black text-[12px] font-medium rounded-[12px]">
+                Free
+              </div>
+            </div>
+          </Link>
+          {/* {showPlans && (
+            <SubscriptionPlans onClose={() => setShowPlans(false)} />
+          )} */}
+          {/* Log Out */}
+          <div
+            onClick={openPopup}
+            className="w-full rounded-2xl pn:max-md:flex-col pn:max-sm:hidden duration-100 hover:bg-red-600 hover:text-white py-2 md:pl-4 text-red-600 items-center flex gap-2"
+          >
+            <IoMdLogOut className="text-xl" />
+            <div className="pn:max-md:text-[12px] pn:max-md:font-semibold">
+              Log Out
+            </div>
           </div>
         </div>
       </div>

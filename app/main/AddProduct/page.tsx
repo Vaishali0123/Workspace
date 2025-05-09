@@ -1,8 +1,8 @@
 "use client";
-import { API } from "@/app/utils/helpers";
+import { API, errorHandler } from "@/app/utils/helpers";
 import axios from "axios";
-import { useSearchParams } from "next/navigation";
-import { useRouter } from "next/router";
+import { useRouter, useSearchParams } from "next/navigation";
+
 import React, { Suspense, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 interface CustomFile {
@@ -21,6 +21,7 @@ const PageContent = () => {
   const [weight, setWeight] = useState("");
   const [images, setImages] = useState<CustomFile[]>([]);
   const router = useRouter();
+  const [load, setLoad] = useState(false);
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return; // Ensure files exist
 
@@ -50,11 +51,27 @@ const PageContent = () => {
     setImages((prevImages) => prevImages.filter((_, i) => i !== index));
   };
   const addproduct = async () => {
+    if (load) return;
     if (images.length === 0) {
       toast.error("Please upload at least one image before proceeding.");
       return;
     }
+    if (
+      !productname ||
+      !desc ||
+      !price ||
+      !discountedprice ||
+      !quantity ||
+      !weight
+    )
+      return toast.error("Please fill all the fields!");
+    if (price === 0 || discountedprice === 0 || quantity === 0)
+      return toast.error(
+        "Selling Price, Discounted Price or Quantity can't be zero."
+      );
     try {
+      setLoad(true);
+
       const formData = new FormData();
 
       // Append product details
@@ -82,8 +99,9 @@ const PageContent = () => {
         setImages([]);
       }
     } catch (e) {
-      toast.error(e);
+      errorHandler(e);
     }
+    setLoad(false);
   };
 
   return (
@@ -98,7 +116,7 @@ const PageContent = () => {
             </div>
             <div
               onClick={addproduct}
-              className="font-semibold bg-blue-600 text-white  text-[18px] px-4 py-2 rounded-xl"
+              className="font-semibold bg-blue-600 cursor-pointer hover:bg-blue-400 active:bg-blue-500 text-white  text-[18px] px-4 py-2 rounded-xl"
             >
               Add Product
             </div>
@@ -127,7 +145,7 @@ const PageContent = () => {
                 setDesc(e.target.value);
               }}
               placeholder="Product description"
-              className="p-1 h-[100px] w-full border rounded-lg"
+              className="p-1 h-[100px] w-full outline-none border rounded-lg"
             />
           </div>
         </div>
@@ -141,7 +159,7 @@ const PageContent = () => {
           </div>
           <div className="p-1 w-full flex flex-col items-center space-y-2 justify-center">
             <div className="text-[14px] w-full text-start flex justify-between items-center font-semibold text-slate-600">
-              Add Media Name<div>(0/5)</div>
+              Add Media Name<div>({images?.length}/5)</div>
             </div>
             <div className="flex gap-2 items-center flex-wrap ">
               {images.map((image, index) => (
@@ -181,6 +199,7 @@ const PageContent = () => {
               <div className="text-[14px] flex justify-between items-center font-semibold text-slate-600">
                 Selling price
               </div>
+              {/* Selling Price by Seller */}
               <input
                 value={price}
                 type="Number"
@@ -193,7 +212,10 @@ const PageContent = () => {
             </div>
             <div className="p-1  w-full">
               <div className="text-[14px] flex justify-between items-center font-semibold text-slate-600">
-                Discount price
+                Discounted price
+                <span className="text-[10px] text-slate-500">
+                  (After Discount)
+                </span>
               </div>
               <input
                 value={discountedprice}
@@ -220,7 +242,8 @@ const PageContent = () => {
               className="p-1 w-full border rounded-lg"
             />
           </div>
-          <div className="p-1 w-full gap-2 flex items-center">
+          {/* Claim GST */}
+          {/* <div className="p-1 w-full gap-2 flex items-center">
             <input
               type="checkbox"
               className="bg-[#5570F1] h-[15px] w-[15px] "
@@ -228,7 +251,7 @@ const PageContent = () => {
             <div className="text-[16px] font-medium flex justify-between items-center text-[#5570F1]">
               This product includes GST
             </div>
-          </div>
+          </div> */}
         </div>
         {/* Shipping section  */}
         <div className="p-2 border bg-white rounded-xl">
@@ -248,10 +271,10 @@ const PageContent = () => {
                 }`}
               ></div>
             </div> */}
-            {/* ---  */}
-            <div className="text-[16px] flex justify-between items-center font-medium text-[#5570F1]">
+            {/* Shipped By Grovyo - Disclaimer (UI needs to be updated)  */}
+            {/* <div className="text-[16px] flex justify-between items-center font-medium text-[#5570F1]">
               This product shipped by Grovyo
-            </div>
+            </div> */}
           </div>
           <div className="flex pn:max-md:flex-col gap-2 w-full">
             <div className="p-1 w-full">
@@ -280,18 +303,23 @@ const PageContent = () => {
             </div>
           </div>
         </div>
-        {/* Different Options section  */}
-        <div className="p-2 border bg-white rounded-xl">
+        {/* Variant Options section  */}
+        <div className="p-2 border bg-white rounded-xl relative opacity-60 pointer-events-none">
+          <div className="absolute inset-0 bg-white/70 backdrop-blur-[5px] flex items-center justify-center z-10 rounded-xl">
+            <span className="text-blue-600 font-semibold text-lg">
+              Variant Options - Coming Soon
+            </span>
+          </div>
+
           <div className="font-semibold text-[18px] p-1">Variant Options</div>
+
           <div className="p-1 w-full gap-2 flex items-center">
-            <input
-              type="checkbox"
-              className="bg-[#5570F1] h-[15px] w-[15px] "
-            />
-            <div className="text-[16px] flex justify-between font-medium items-center ">
+            <input type="checkbox" className="bg-[#5570F1] h-[15px] w-[15px]" />
+            <div className="text-[16px] flex justify-between font-medium items-center">
               This product has variants
             </div>
           </div>
+
           <div className="flex pn:max-md:flex-col gap-2 w-full">
             <div className="p-1 w-full">
               <div className="text-[14px] flex justify-between items-center font-semibold text-slate-600">
@@ -303,7 +331,7 @@ const PageContent = () => {
                 className="p-1 w-full border rounded-lg"
               />
             </div>
-            <div className="p-1  w-full">
+            <div className="p-1 w-full">
               <div className="text-[14px] flex justify-between items-center font-semibold text-slate-600">
                 Value
               </div>
@@ -314,7 +342,8 @@ const PageContent = () => {
               />
             </div>
           </div>
-          <div className="p-1 hover:underline cursor-pointer font-medium text-[#5570F1] text-[16px] flex justify-between items-center ">
+
+          <div className="p-1 hover:underline cursor-pointer font-medium text-[#5570F1] text-[16px] flex justify-between items-center">
             Add More
           </div>
         </div>

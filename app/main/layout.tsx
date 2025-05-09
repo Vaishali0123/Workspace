@@ -25,6 +25,7 @@ export default function MainLayout({
           className={`${
             path === "/main/CreateCommunity" ||
             path === "/main/Post" ||
+            path === "/main/EditCommunity" ||
             path === "/main/AddProduct" ||
             path === "/main/CreatePost"
               ? "hidden"
@@ -45,6 +46,7 @@ export default function MainLayout({
         <div
           className={`-z-10 w-full  overflow-auto ${
             path === "/main/CreateCommunity" ||
+            path === "/main/EditCommunity" ||
             path === "/main/Post" ||
             path === "/main/AddProduct" ||
             path === "/main/CreatePost"

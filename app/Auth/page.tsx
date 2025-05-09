@@ -282,7 +282,7 @@ const Page = () => {
         </div>
       </div>
       {/* right  */}
-      <div className="w-[45%] flex justify-center h-full items-center pn:max-sm:w-full">
+      <div className="w-[45%] flex relative justify-center h-full items-center pn:max-sm:w-full">
         {/* {children} */}
         <div className=" inset-0 w-full z-50 h-screen flex justify-center items-center ">
           <div className="w-[50%] sm:max-md:w-[70%] pn:max-sm:w-[80%] h-[85%] justify-center pn:max-sm:items-center flex flex-col p-2 space-y-3 items-start">
@@ -407,23 +407,24 @@ const Page = () => {
                 />
               )}
             </div>
+            {/* Conditions */}
+            <div className="flex bottom-3 absolute  w-[50%] pn:max-sm:w-full flex-wrap justify-center items-center  dark:text-white text-[#414141] gap-4 text-[12px]  pn:max-sm:-mb-3">
+              <Link href={"../../terms"}>T&C</Link>
+              <Link href={"../privacy"}>Privacy</Link>
+              <Link href={"../contact"}>Contact Us</Link>
+              {/* <Link href={"../about"}>About</Link> */}
+              <Link href={"../refund"}>Refund</Link>
+              <Link href={"/requestdata"}>Request Data</Link>
+              <Link href={"/deleterequest"}>Delete Request</Link>
+              {/* <Link href={"../shipping"}>Shipping</Link> */}
+              <Link href={"../cancellation"}>Cancellation</Link>
+              <Link href={"../return"}>Return Policy</Link>
+            </div>
           </div>
         </div>
       </div>
-      {/* Conditions */}
-      <div className="flex absolute bottom-3 pn:max-sm:hidden w-[100%] flex-wrap justify-end items-center dark:text-white text-[#414141] gap-4 text-[12px] select-none ">
-        <div className="flex sm:bottom-3 w-[50%] pn:max-sm:w-full flex-wrap justify-center items-center dark:text-white text-[#414141] gap-4 text-[12px] select-none pn:max-sm:-mb-3">
-          <Link href={"../terms"}>T&C</Link>
-          <Link href={"../privacy"}>Privacy</Link>
-          <Link href={"../contact"}>Contact Us</Link>
-          <Link href={"/about"}>About</Link>
-          <Link href={"/requestdata"}>Request Data</Link>
-          <Link href={"/deleterequest"}>Delete Request</Link>
-          <Link href={"../shipping"}>Shipping</Link>
-          <Link href={"../cancellation"}>Cancellation</Link>
-          <Link href={"../return"}>Return Policy</Link>
-        </div>
-      </div>
+
+      <div className="flex absolute z-10 bottom-3 pn:max-sm:hidden w-[100%] bg-slate-500 flex-wrap justify-end items-center dark:text-white text-[#414141] gap-4 text-[12px]  "></div>
     </div>
   );
 };

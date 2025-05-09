@@ -16,26 +16,13 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ path, data }) => {
   const [pop, setPop] = useState(false);
 
-  // const detecterror = ({ e }: DetectErrorParams) => {
-  //   if (e.response) {
-  //     console.log(e.response.data);
-  //     console.log(e.response.status);
-  //     console.log(e.response.headers);
-  //   } else if (e.request) {
-  //     console.log(e.request);
-  //   } else {
-  //     console.log("Error", e.message);
-  //   }
-  //   console.log(e.config);
-  // };
-
   return (
     <>
       {pop && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-opacity-50 bg-black">
           <div className="bg-white p-4 rounded-xl shadow-lg w-[500px]">
             <div className="flex items-center gap-2">
-              <div className="rounded-full bg-green-100 w-10 h-10 flex justify-center items-center">
+              <div className="rounded-[16px] bg-green-100 w-10 h-10 flex justify-center items-center">
                 <LuCircleCheckBig className="text-green-600 text-[25px]" />
               </div>
               <div className="text-[20px] font-semibold ">Collection</div>
@@ -126,13 +113,13 @@ const Header: React.FC<HeaderProps> = ({ path, data }) => {
               Earn with us
             </div>
             <div className="flex h-[40px] w-[40px] items-center justify-center border border-dashed rounded-2xl">
-              <div className="flex h-[38px] w-[38px] items-center justify-center bg-slate-500 rounded-2xl">
+              <div className="flex h-[38px] w-[38px] items-center justify-center bg-white rounded-2xl">
                 <img
                   src={data?.dp ? data?.dp : ""}
                   alt="workspace"
                   width={50}
                   height={50}
-                  className="rounded-full pn:max-sm:hidden object-cover w-full h-full"
+                  className="rounded-[16px] pn:max-sm:hidden object-cover w-full h-full"
                 />
               </div>
             </div>
@@ -150,7 +137,7 @@ const Header: React.FC<HeaderProps> = ({ path, data }) => {
                   alt="workspace"
                   width={50}
                   height={50}
-                  className="rounded-full pn:max-sm:hidden object-cover w-full h-full"
+                  className="rounded-[16px] pn:max-sm:hidden object-cover w-full h-full"
                 />
               </div>
             </div>
@@ -168,7 +155,7 @@ const Header: React.FC<HeaderProps> = ({ path, data }) => {
                   alt="workspace"
                   width={50}
                   height={50}
-                  className="rounded-full pn:max-sm:hidden object-cover w-full h-full"
+                  className="rounded-[16px] pn:max-sm:hidden object-cover w-full h-full"
                 />
               </div>
             </div>
@@ -187,7 +174,7 @@ const Header: React.FC<HeaderProps> = ({ path, data }) => {
                   alt="workspace"
                   width={50}
                   height={50}
-                  className="rounded-full  object-cover w-full h-full"
+                  className="rounded-[16px]  object-cover w-full h-full"
                 />
               </div>
             </div>

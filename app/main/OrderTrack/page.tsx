@@ -4,9 +4,10 @@ import { IoCartOutline } from "react-icons/io5";
 import { BiWallet } from "react-icons/bi";
 import { FiShoppingBag } from "react-icons/fi";
 import axios from "axios";
-import { API } from "@/app/utils/helpers";
+import { API, errorHandler } from "@/app/utils/helpers";
 import { useAuthContext } from "@/app/Auth/Components/auth";
-import toast from "react-hot-toast";
+
+import Order from "./order/Order";
 
 interface Orders {
   orderId: string;
@@ -29,7 +30,7 @@ interface Collection {
 const Page = () => {
   const { data } = useAuthContext();
   const userId = data?.id;
-  const [orderData, setOrderData] = useState<Orders[]>([]);
+  // const [orderData, setOrderData] = useState<Orders[]>([]);
   const [storeearning, setStoreearning] = useState(0);
   const [totalorders, setTotalorders] = useState(0);
   const [pendingorders, setPendingorders] = useState(0);
@@ -66,15 +67,14 @@ const Page = () => {
             }
           );
         }
-        setOrderData(productsArray);
+        // setOrderData(productsArray);
         setTotalorders(totalOrders);
         setPendingorders(pendingOrders);
         setCompletedorders(completedOrders);
         setStoreearning(res?.data?.data?.storeid?.storeearning);
       }
     } catch (e) {
-      toast.error("Something went wrong");
-      console.log(e);
+      errorHandler(e);
     }
   };
   useEffect(() => {
@@ -146,54 +146,7 @@ const Page = () => {
       </div>
       {/* Details */}
       <div>
-        <div className="bg-[#f1f4f9] flex rounded-t-xl text-sm font-semibold h-[50px] items-center p-2">
-          <div className="w-[25%] ">Product Name</div>
-          {/* <div className="w-[15%]">#</div>
-          <div className="w-[25%]">Name</div> */}
-          <div className="w-[15%] text-center">Price</div>
-          <div className="w-[15%] text-center">Total orders</div>
-          <div className="w-[15%] text-center">Pending orders</div>
-          <div className="w-[15%] text-center">Successful orders</div>
-          {/* <div className="w-[15%] text-center">Payment methord</div> */}
-        </div>
-
-        {/* Order Details */}
-        <div className=" h-[calc(100%-1000px)] overflow-auto rounded-b-xl  p-2 text-[12px]">
-          {orderData?.map((item: Orders, index: number) => (
-            <div key={index} className="flex border-b py-2 items-center">
-              {/* <div className="w-[15%] ">#{item?.orderId}</div> */}
-              <div className="w-[25%] flex items-center gap-2 px-2">
-                <div className="w-12 h-12 border">
-                  <img
-                    src={item?.images?.[0]?.content}
-                    alt="workspace"
-                    width={50}
-                    height={50}
-                    className="rounded-md object-cover"
-                  />
-                </div>
-                <div className="w-[25%] flex items-center gap-2 px-2">
-                  {item?.name}
-                </div>
-              </div>
-
-              <div className="w-[15%] text-center">₹{item?.price}</div>
-              <div className="w-[15%] text-center">{item?.orderscount}</div>
-
-              <div className="w-[15%] text-center">
-                {item?.pendingordercount}
-              </div>
-              <div className="w-[15%] text-center">
-                {item?.completedordercount}
-              </div>
-              <div className="w-[15%] text-center flex justify-center">
-                <div className="rounded-full w-fit px-4 py-1 text-xs font-semibold">
-                  {/* {item?.data?.[0]?.currentStatus} */}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+        <Order />
       </div>
     </div>
   );

@@ -33,7 +33,11 @@ export const AuthContext = createContext<AuthContextType>(defaultAuthContext);
 export const useAuthContext = () => {
   return useContext(AuthContext);
 };
-
+type BankingDetailsType = {
+  IFSC: string;
+  accholdername: string;
+  AccountNo: string;
+};
 export interface UserData {
   dp: string;
   fullname: string;
@@ -42,6 +46,8 @@ export interface UserData {
   isverified: boolean;
   isStoreVerified: boolean | string;
   storeid: string;
+  memberships?: string;
+  bankdetails?: BankingDetailsType;
 }
 
 export const AuthContextProvider = ({
@@ -67,11 +73,16 @@ export const AuthContextProvider = ({
         return;
       }
       setLoading(true);
-      const res = await axios.get(`${API}/verifytoken`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await axios.get(
+        `${API}/verifytoken`,
+
+        {
+          params: { platform: "Workspace" },
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (res.data.success) {
         setAuth(true);

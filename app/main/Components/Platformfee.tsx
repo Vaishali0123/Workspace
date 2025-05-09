@@ -1,0 +1,17 @@
+export const platformFees = [
+  { category: "Retail", fee: "5%" },
+  { category: "Fashion and Apparel", fee: "10%" },
+  { category: "Electronics", fee: "10%" },
+  { category: "Home And Furniture", fee: "7%" },
+  { category: "Beauty and Personal Care", fee: "10%" },
+  { category: "Health and Wellness", fee: "6%" },
+  { category: "Food and Grocery", fee: "8% - 15%" },
+  { category: "Books and Media", fee: "7% - 10%" },
+  { category: "Toys and Games", fee: "8%" },
+  { category: "Jewellery and Accessories", fee: "9%" },
+  { category: "Art and Crafts", fee: "9%" },
+  { category: "Sports and Outdoors", fee: "8%" },
+  { category: "Electronics Accessories", fee: "9%" },
+  { category: "Handmade and Artisanal Products", fee: "7%" },
+  { category: "Other", fee: "10%" },
+];

@@ -1,14 +1,16 @@
 "use client";
 import React, { useCallback, useState } from "react";
-import { BsThreeDotsVertical } from "react-icons/bs";
 import { PiClipboardText } from "react-icons/pi";
 import { BsPeople } from "react-icons/bs";
 import { useDispatch } from "react-redux";
 import axios from "axios";
-import { API } from "@/app/utils/helpers";
+import { API, errorHandler } from "@/app/utils/helpers";
 import { useEffect } from "react";
 import Link from "next/link";
-import { IoStorefrontOutline } from "react-icons/io5";
+import {
+  IoInformationCircleOutline,
+  IoStorefrontOutline,
+} from "react-icons/io5";
 import { RiLoader2Line } from "react-icons/ri";
 import { FaAsterisk, FaPlus } from "react-icons/fa6";
 import toast from "react-hot-toast";
@@ -21,7 +23,7 @@ import { RootState } from "@/app/redux/store";
 import Load from "../Components/Load";
 // import { FiShoppingBag } from "react-icons/fi";
 // import { MdPendingActions } from "react-icons/md";
-
+import { platformFees } from "../Components//Platformfee";
 // Built-in TypeScript type
 type LocationType = GeolocationCoordinates;
 
@@ -49,7 +51,6 @@ interface Collection {
 const PageContent = () => {
   const [collectionres, setCollectionres] = useState(false);
   const [pop, setPop] = useState(false);
-  const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [houseNo, setHouseNo] = useState("");
   const [pincode, setPincode] = useState("");
@@ -69,7 +70,7 @@ const PageContent = () => {
   const [collectionData, setCollectionData] = useState([]);
   const { data: authdata } = useAuthContext();
   const userId = authdata?.id;
-
+  const [showFeeInfo, setShowFeeInfo] = useState(false);
   const [highlight, setHighlight] = useState(false);
   const [location, setLocation] = useState<LocationType>();
   const [bankingdetails, setBankingDetails] = useState<BankingDetailsType>({
@@ -77,6 +78,8 @@ const PageContent = () => {
     accholdername: "",
     AccountNo: "",
   });
+  const [agreeTerms, setAgreeTerms] = useState(false);
+
   const handleRegisterClick = () => {
     if (!onecom || post === 0) {
       setHighlight(true);
@@ -100,22 +103,23 @@ const PageContent = () => {
     }
   }, [data]);
   const Collection = [
-    { category: "Tech" },
-    { category: "Health" },
-    { category: "Education" },
-    { category: "Gaming" },
-    { category: "Health" },
-    { category: "Food" },
-    { category: "Entertainment" },
-    { category: "Songs & Music" },
-    { category: "Education" },
-    { category: "Tech" },
-    { category: "Health" },
-    { category: "Education" },
-    { category: "Tech" },
-    { category: "Health" },
-    { category: "Education" },
+    { category: "Retail" },
+    { category: "Fashion and Apparel" },
+    { category: "Electronics" },
+    { category: "Home And Furniture" },
+    { category: "Beauty and Personal Care" },
+    { category: "Health and Wellness" },
+    { category: "Food and Grocery" },
+    { category: "Books and Media" },
+    { category: "Toys and Games" },
+    { category: "Jewellery and Accessories" },
+    { category: "Art and Crafts" },
+    { category: "Sports and Outdoors" },
+    { category: "Electronics Accessories" },
+    { category: "Handmade and Artisanal Products" },
+    { category: "Other" },
   ];
+
   // postal code
   const handlePin = async (e: React.ChangeEvent<HTMLInputElement>) => {
     try {
@@ -162,8 +166,12 @@ const PageContent = () => {
   }, [isStoreVerified, ifCode]);
   // Register store
   const registerstore = async () => {
+    if (!agreeTerms) {
+      alert("Please agree to the location Terms & Conditions to continue.");
+      return;
+    }
     if (!location) {
-      toast.error("Location is required to register store");
+      toast.error("Please enable location manually and refresh the page.");
       return;
     }
     try {
@@ -182,10 +190,7 @@ const PageContent = () => {
         toast.error("Please Enter Required Details");
         return;
       }
-      if (!location) {
-        toast.error("Please allow location permission.");
-        return;
-      }
+
       const formData = new FormData();
       formData.append("houseNo", houseNo);
       formData.append("pincode", pincode);
@@ -232,14 +237,14 @@ const PageContent = () => {
           category: category,
         }
       );
-      console.log(response?.data, "re");
+
       if (response.data.success) {
         toast.success("Successfully created collection");
         setCollpopup(false);
         setCollectionData(response.data.collection);
       }
     } catch (error) {
-      console.error(error);
+      errorHandler(error);
     }
     setCollectionres(false);
   };
@@ -270,7 +275,7 @@ const PageContent = () => {
       ) : !isStoreVerified || isStoreVerified === "pending" ? (
         <div className="w-full h-full rounded-2xl overflow-hidden relative">
           {/* register store  */}
-          {ifCode && isStoreVerified != "pending" ? (
+          {ifCode || isStoreVerified != "pending" ? (
             <>
               <div className=" w-full  rounded-2xl space-y-2 flex items-center flex-col justify-center h-[100%] p-2">
                 <div className="">
@@ -368,7 +373,7 @@ const PageContent = () => {
 
                     <div
                       onClick={handleRegisterClick}
-                      className={`"flex items-center gap-2 px-4 p-1 hover:bg-slate-50  select-none cursor-pointer  text-[12px] text-center w-fit border rounded-xl bg-white" ${
+                      className={`"flex items-center gap-2 px-4 p-1 hover:bg-blue-500  select-none cursor-pointer  text-[12px] text-center w-fit border rounded-xl bg-white" ${
                         onecom && post > 0
                           ? "bg-blue-600 text-white"
                           : "bg-slate-50"
@@ -397,13 +402,13 @@ const PageContent = () => {
                       register now
                     </div> */}
                   </div>
-                  <div className="flex items-center gap-2 p-2  text-[11px] text-[#363636] rounded-lg bg-white w-full">
+                  {/* <div className="flex items-center gap-2 p-2  text-[11px] text-[#363636] rounded-lg bg-white w-full">
                     Check Out our
                     <a className="text-blue-600 cursor-pointer ">
                       term & conditions
                     </a>
                     for store
-                  </div>
+                  </div> */}
                 </div>
               </div>
               {/* register store  pop up */}
@@ -447,7 +452,9 @@ const PageContent = () => {
                       ) : (
                         <button
                           disabled={loading}
-                          className=" p-2 px-4 text-center rounded-xl bg-[#5570F1] text-white"
+                          className={` p-2 px-4 text-center rounded-xl ${
+                            agreeTerms ? "bg-[#5570F1]" : "bg-[#7f90e4]"
+                          }  text-white`}
                           onClick={registerstore}
                         >
                           Submit
@@ -455,7 +462,7 @@ const PageContent = () => {
                       )}
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 pt-2 text-[14px] gap-2 w-full">
+                  <div className="grid grid-cols-1 pt-2 bg-white text-[14px] gap-2 w-full">
                     {/* house no  */}
                     <div className="flex flex-col gap-1 w-full">
                       <div className="text-sm flex gap-1 items-center font-medium">
@@ -646,6 +653,80 @@ const PageContent = () => {
                         }
                       />
                     </div>
+                    {/* T&C */}
+                    <div className="mt-4 bg-gray-50 p-4 border rounded-lg text-sm text-gray-700 space-y-3">
+                      <div className="font-semibold text-base text-gray-800">
+                        Store Registration Terms & Conditions
+                      </div>
+
+                      <ul className="list-disc pl-5 space-y-2">
+                        <li>
+                          <span className="font-medium">Location Access:</span>{" "}
+                          We require your current geolocation to verify the
+                          authenticity and operational area of your store.
+                          Location access is mandatory to proceed.
+                        </li>
+                        <li>
+                          <span className="font-medium">
+                            User Responsibility:
+                          </span>{" "}
+                          You are solely responsible for the accuracy of your
+                          location data. If incorrect information is submitted,
+                          you will bear any consequences or losses that arise.
+                          The platform is not liable for disputes or delivery
+                          issues caused by inaccurate location details.
+                        </li>
+                        <li>
+                          <span className="font-medium">No Legal Claims:</span>{" "}
+                          By submitting this form, you waive the right to
+                          initiate legal action against the platform for
+                          location-related disputes or any operational
+                          limitations caused by false or misrepresented data.
+                        </li>
+                        <li>
+                          <span className="font-medium">
+                            Earnings & Platform Fee:
+                          </span>{" "}
+                          You may create multiple product collections within
+                          your store. For every order you receive, the platform
+                          will deduct a standard platform fee from the total
+                          order value. The remaining amount will be credited to
+                          your account as per the selected payout cycle.
+                        </li>
+                        <li>
+                          <span className="font-medium">Payout Policy:</span>{" "}
+                          All earnings will be disbursed to the bank details
+                          provided during registration. Please ensure that your
+                          banking information is accurate and matches your
+                          identity to avoid payout failures.
+                        </li>
+                        <li>
+                          <span className="font-medium">Compliance:</span>{" "}
+                          Submitting fake or misleading details, including
+                          identity or banking info, may lead to store suspension
+                          or permanent ban from the platform.
+                        </li>
+                      </ul>
+
+                      <div className="flex items-start gap-2 pt-2">
+                        <input
+                          type="checkbox"
+                          id="agreeLocationTerms"
+                          checked={agreeTerms}
+                          onChange={() => setAgreeTerms(!agreeTerms)}
+                          className="mt-1 cursor-pointer"
+                        />
+                        <label
+                          htmlFor="agreeLocationTerms"
+                          className="cursor-pointer leading-snug text-gray-800"
+                        >
+                          I have read and agree to the above Terms & Conditions.
+                          I also consent to share my device’s location for store
+                          verification and accept the platform policies
+                          regarding earnings, data, and identity.
+                        </label>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -719,7 +800,7 @@ const PageContent = () => {
                 </div>
                 <Link
                   href={"/main/OrderTrack"}
-                  className="bg-[#6D83F3] text-white hover:bg-[#bfd6ff] active:bg-[#8194f4] cursor-pointer font-semibold rounded-[12px] px-6 py-3 flex justify-center items-center"
+                  className="bg-yellow-400 text-black hover:bg-[#fffdbf] active:bg-[#f1f36d] cursor-pointer font-medium rounded-[12px] px-6 py-3 flex justify-center items-center"
                 >
                   View Analytics
                 </Link>
@@ -751,15 +832,64 @@ const PageContent = () => {
           {/* pop up for creating collection */}
           <div className="h-[calc(100%-130px)] pt-2 overflow-auto">
             {collpopup ? (
-              <div className="h-full w-full bg-[#1717170d] backdrop-blur-sm absolute flex justify-center items-center top-0">
-                <div className="p-4 rounded-xl space-y-2 border bg-white">
-                  <div className="w-[300px]">
+              <div
+                // onClick={() => {
+                //   setCollpopup(false);
+                // }}
+                className="h-full w-full bg-[#1717170d] backdrop-blur-sm absolute z-20 flex justify-center items-center top-0"
+              >
+                <div className="p-4 rounded-xl  space-y-2 border bg-white">
+                  {/* Platform Fees */}
+                  {showFeeInfo && (
+                    <div className="fixed inset-0 bg-[#1717170d] backdrop-blur-sm z-30 flex justify-center items-center">
+                      <div className="bg-white border rounded-xl p-6 w-[90%] max-w-[500px] max-h-[80vh] overflow-auto shadow-xl relative">
+                        <div className="text-[14px] text-gray-600 mb-4 leading-relaxed">
+                          Platform charges a service fee per order depending on
+                          the selected collection category. This fee helps us
+                          ensure secure transactions, secure product delivery,
+                          and continuous improvements for a better customer
+                          experience.
+                        </div>
+
+                        <div className="text-[15px] font-semibold mb-3">
+                          Platform Fees by Category
+                        </div>
+
+                        <div className="space-y-2 text-[14px] text-gray-700">
+                          {platformFees.map((item, index) => (
+                            <div
+                              key={index}
+                              className="flex justify-between border-b py-1"
+                            >
+                              <div>{item.category}</div>
+                              <div>{item.fee}</div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div
+                          onClick={() => setShowFeeInfo(false)}
+                          className="absolute top-3 right-3 text-gray-500 text-[20px] cursor-pointer"
+                        >
+                          ✕
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="w-[300px] ">
                     <div className="flex  items-center gap-2">
                       <div className="rounded-full bg-green-100 w-10 h-10 flex justify-center items-center">
                         <LuCircleCheckBig className="text-green-600 text-[25px]" />
                       </div>
                       <div className="text-[20px] font-semibold ">
                         Collection
+                      </div>
+                      <div
+                        onClick={() => setShowFeeInfo((prev) => !prev)}
+                        className=" cursor-pointer text-gray-500 hover:text-black"
+                      >
+                        <IoInformationCircleOutline className="text-[16px] text-black" />
                       </div>
                     </div>
                     <div className="text-[12px] mt-2">
@@ -830,120 +960,119 @@ const PageContent = () => {
             {/* collection data  */}
             {isStoreVerified ? (
               <div className=" flex flex-col overflow-y-auto items-center justify-center -z-10">
-                {collectionData?.length > 0 ? (
-                  collectionData?.map((d: Collection, i) => (
-                    <div
-                      key={i}
-                      className="h-[88%] bg-slate-100 border rounded-2xl p-2 w-full overflow-auto space-y-2 pt-2 mt-[1%]"
-                    >
-                      <div className="flex justify-between border-b pb-2 items-center">
-                        <div className="font-medium">{d?.collectionName}</div>
+                {collectionData?.length > 0
+                  ? collectionData?.map((d: Collection, i) => (
+                      <div
+                        key={i}
+                        className="h-[88%] bg-slate-100 border rounded-2xl p-2 w-full overflow-auto space-y-2 pt-2 mt-[1%]"
+                      >
+                        <div className="flex justify-between border-b pb-2 items-center">
+                          <div className="font-medium">{d?.collectionName}</div>
 
-                        <Link
-                          href={`/main/AddProduct?userId=${userId}&collectionId=${d._id}`}
-                          className="flex  p-2 px-4 bg-[#6D83F3] text-white text-[14px] items-center justify-center rounded-xl"
-                        >
-                          Add product
-                        </Link>
-                      </div>
-                      <div className="border py-2 pn:max-sm:hidden bg-white font-semibold text-[15px] tracking-tighter flex h-[10%] items-center w-full rounded-xl">
-                        <div className="w-[40%]  px-2">Product Name</div>
-                        <div className="w-[10%]  text-center">In stocks</div>
-                        <div className="w-[10%] text-center">Price</div>
-                        {/* <div className="w-[10%] text-center ">Status</div> */}
-                        <div className="w-[20%] text-center ">Orders</div>
-                        <div className="w-[10%] text-center">Action</div>
-                      </div>
-                      <div className="overflow-y-auto max-h-[400px] flex-col flex items-center justify-center">
-                        {d?.products?.length > 0 ? (
-                          d?.products.map((f: Products, i: number) => (
-                            <div
-                              key={i}
-                              className="flex  h-[100px] pn:max-sm:justify-between items-center relative w-full"
-                            >
-                              <div className="sm:w-[40%] items-center gap-2 px-2 flex">
-                                <div className="h-[70px] w-[70px] rounded-lg border-2 border-white">
-                                  <img
-                                    src={f?.images?.[0]?.content}
-                                    alt="product"
-                                    className="w-[100%] h-[100%] object-cover rounded-lg"
-                                  />
-                                </div>
-                                <div>
-                                  <div className="font-semibold text-[16px]">
-                                    {f?.name}
+                          <Link
+                            href={`/main/AddProduct?userId=${userId}&collectionId=${d._id}`}
+                            className="flex  py-1 px-2 bg-blue-600 text-white text-[14px] font-bold items-center justify-center rounded-xl"
+                          >
+                            +
+                          </Link>
+                        </div>
+                        <div className="border py-2 pn:max-sm:hidden bg-white font-semibold text-[15px] tracking-tighter flex h-[10%] items-center w-full rounded-xl">
+                          <div className="w-[40%]  px-2">Product Name</div>
+                          <div className="w-[10%]  text-center">In stocks</div>
+                          <div className="w-[10%] text-center">Price</div>
+                          {/* <div className="w-[10%] text-center ">Status</div> */}
+                          <div className="w-[20%] text-center ">Orders</div>
+                          {/* <div className="w-[10%] text-center">Action</div> */}
+                        </div>
+                        <div className="overflow-y-auto max-h-[400px] flex-col flex items-center justify-center">
+                          {d?.products?.length > 0 ? (
+                            d?.products.map((f: Products, i: number) => (
+                              <div
+                                key={i}
+                                className="flex  h-[100px] pn:max-sm:justify-between items-center relative w-full"
+                              >
+                                <div className="sm:w-[40%] items-center gap-2 px-2 flex">
+                                  <div className="h-[70px] w-[70px] rounded-lg border-2 border-white">
+                                    <img
+                                      src={f?.images?.[0]?.content}
+                                      alt="product"
+                                      className="w-[100%] h-[100%] object-cover rounded-lg"
+                                    />
                                   </div>
-                                  {/* <div className="font-medium text-[14px]">
+                                  <div>
+                                    <div className="font-semibold text-[16px]">
+                                      {f?.name}
+                                    </div>
+                                    {/* <div className="font-medium text-[14px]">
                           by store owner
                         </div> */}
+                                  </div>
                                 </div>
-                              </div>
-                              <div className="w-[10%] text-center pn:max-sm:hidden">
-                                {f?.quantity}
-                              </div>
-                              <div className="w-[10%] text-center pn:max-sm:hidden">
-                                {f?.price}
-                              </div>
-                              <div className="w-[20%] text-center pn:max-sm:hidden">
-                                {f?.orderscount}
-                              </div>
-                              {/* <div className="w-[20%] text-center  pn:max-sm:hidden">
+                                <div className="w-[10%] text-center pn:max-sm:hidden">
+                                  {f?.quantity}
+                                </div>
+                                <div className="w-[10%] text-center pn:max-sm:hidden">
+                                  {f?.price}
+                                </div>
+                                <div className="w-[20%] text-center pn:max-sm:hidden">
+                                  {f?.orderscount}
+                                </div>
+                                {/* <div className="w-[20%] text-center  pn:max-sm:hidden">
                       47.59%
                     </div> */}
-                              <div
-                                onClick={() => setOpen(!open)}
-                                className="sm:w-[10%] text-center flex items-center justify-center"
-                              >
-                                <BsThreeDotsVertical />
-                              </div>
-                              {open ? (
-                                <div className="absolute  w-[120px] bg-white  right-0 border shadow-lg rounded-2xl py-2 z-10">
-                                  {/* <button className="w-full px-4 py-2 text-sm hover:bg-gray-100 font-semibold">
+                                {/* <div
+                                  onClick={() => setOpen(!open)}
+                                  className="sm:w-[10%] text-center flex items-center justify-center"
+                                >
+                                  <BsThreeDotsVertical />
+                                </div> */}
+                                {/* {open ? (
+                                  <div className="absolute  w-[120px] bg-white  right-0 border shadow-lg rounded-2xl py-2 z-10">
+                                    <button className="w-full px-4 py-2 text-sm hover:bg-gray-100 font-semibold">
                           Edit
-                        </button> */}
-                                  <button
-                                    // onClick={() => deleteCommunity(d._id)} // Pass community ID here
-                                    className="w-full px-4 py-2 text-sm hover:bg-gray-100 font-semibold"
-                                  >
-                                    Delete
-                                  </button>
-                                </div>
-                              ) : null}
+                        </button>
+                                    <button
+                                      onClick={() => deleteCommunity(d._id)} // Pass community ID here
+                                      className="w-full px-4 py-2 text-sm hover:bg-gray-100 font-semibold"
+                                    >
+                                      Delete
+                                    </button>
+                                  </div>
+                                ) : null} */}
+                              </div>
+                            ))
+                          ) : (
+                            <div
+                              // href={`/main/AddProduct?userId=${userId}&collectionId=${d._id}`}
+                              className="flex p-2 px-4 text-[14px]  text-slate-600 items-center  justify-center rounded-xl"
+                            >
+                              Oops! No products found. Your
+                              <span className="text-blue-600 px-1 font-bold">
+                                earnings
+                              </span>
+                              are waiting for you
                             </div>
-                          ))
-                        ) : (
-                          <div
-                            // href={`/main/AddProduct?userId=${userId}&collectionId=${d._id}`}
-                            className="flex p-2 px-4 text-[14px]  text-slate-600 items-center  justify-center rounded-xl"
-                          >
-                            Oops! No products found. Your
-                            <span className="text-blue-600 px-1 font-bold">
-                              earnings
-                            </span>
-                            are waiting for you
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))
-                ) : (
-                  <div
-                    onClick={() => {
-                      setCollpopup(true);
-                    }}
-                    className="text-center p-2 mt-2 rounded-xl text-white bg-[#305ff9] max-w-[17%] pn:max-pp:text-[12px] pn:max-sm:max-w-[30%]"
-                  >
-                    Create Collection
-                  </div>
-                )}
+                    ))
+                  : // <div
+                    //   onClick={() => {
+                    //     setCollpopup(true);
+                    //   }}
+                    //   className="text-center p-2 mt-2 rounded-xl text-white bg-[#305ff9] max-w-[17%] pn:max-pp:text-[12px] pn:max-sm:max-w-[30%]"
+                    // >
+                    //   Create Collection
+                    // </div>
+                    null}
               </div>
             ) : null}
-            <div className="flex items-center justify-center w-full ">
+            <div className="flex  items-center justify-center w-full ">
               <div
                 onClick={() => {
                   setCollpopup(true);
                 }}
-                className="text-center p-2 mt-2 rounded-xl  text-white bg-[#305ff9] max-w-[17%] pn:max-pp:text-[12px] pn:max-sm:max-w-[30%]"
+                className="text-center p-2 mt-2 rounded-xl  text-white cursor-pointer bg-[#305ff9] max-w-[17%] pn:max-pp:text-[12px] pn:max-sm:max-w-[30%]"
               >
                 Create Collection
               </div>

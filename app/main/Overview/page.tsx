@@ -6,7 +6,18 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { BarChart, Line, LineChart, Tooltip, YAxis } from "recharts";
+import {
+  BarChart,
+  Label,
+  Line,
+  LineChart,
+  PolarRadiusAxis,
+  RadialBar,
+  RadialBarChart,
+  ResponsiveContainer,
+  Tooltip,
+  YAxis,
+} from "recharts";
 import React, { useCallback, useEffect, useState } from "react";
 import { Bar, CartesianGrid, XAxis } from "recharts";
 import { RiArrowDropDownLine, RiLoaderLine } from "react-icons/ri";
@@ -31,6 +42,9 @@ import { FaCircleCheck } from "react-icons/fa6";
 import { useFetchStoreAnalyticsQuery } from "@/app/redux/slices/storeanalytics";
 import { LuCirclePlus } from "react-icons/lu";
 import { IoStorefrontOutline } from "react-icons/io5";
+import { Toaster } from "react-hot-toast";
+import Order from "../OrderTrack/order/Order";
+import ComingSoon from "../Components/ComingSoon";
 
 interface CommunityAnalytics {
   createdAt: Date;
@@ -110,6 +124,27 @@ const Page = () => {
       skip: !!shouldSkip,
     }
   );
+  console.log(StoreAnalytics, "StoreAnalytics");
+  const [popularity, setPopularity] = useState("Calculating...");
+  //popularity
+  const chartDatas = [
+    {
+      month: "january",
+      popularity: popularity,
+      total: 100 - Number(popularity),
+    },
+  ];
+
+  const chartPopularity = {
+    desktop: {
+      label: "popularity",
+      color: "hsl(var(--chart-1))",
+    },
+    mobile: {
+      label: "total",
+      color: "hsl(var(--chart-2))",
+    },
+  } satisfies ChartConfig;
   const fetchCommunity = async () => {
     if (hasFetched) return; // Prevent multiple API calls
     try {
@@ -196,7 +231,6 @@ const Page = () => {
     }),
     []
   );
-
   const fetchPosts = async () => {
     try {
       const response = await axios.get(
@@ -207,7 +241,27 @@ const Page = () => {
         if (response.data.posts?.length > 0) {
           dispatch(setPost(response?.data?.posts?.length));
         }
+        console.log(response.data.posts, "response.data.posts");
         setPostData(response.data.posts);
+        let pop = 0;
+        let c;
+        if (response?.data?.posts?.length > 0) {
+          response?.data?.posts.forEach((post: PostData) => {
+            c = post.analytics[post.analytics.length - 1] || {};
+
+            const engagementRate =
+              (((c?.views || 0) + (c?.shares || 0) + (c?.clicks || 0)) /
+                (100 + (c?.impressions || 0))) *
+              100;
+
+            pop += Number(engagementRate.toFixed(1));
+          });
+        }
+        if (pop > 0) {
+          setPopularity(String(pop.toFixed(1)));
+        } else {
+          setPopularity("0");
+        }
       }
     } catch (err) {
       console.error("Error fetching posts", err);
@@ -274,6 +328,7 @@ const Page = () => {
   const chartDatastore = StoreAnalytics?.storeAnalytics
     ? [...StoreAnalytics.storeAnalytics].reverse()
     : [];
+
   // const chartDatastore = [
   //   {
   //     date: "2025-03-18",
@@ -332,15 +387,20 @@ const Page = () => {
   //     cancelledorders: 0,
   //   },
   // ];
+
   return (
     <div className="h-full w-full">
+      <Toaster />
       <div className="w-full select-none cursor-pointer h-[60px] justify-between items-center px-2 flex gap-2">
         <div className="p-1 px-2 h-fit font-semibold text-[#1d1d1d] ">
           Overview
         </div>
         <div className=" items-center px-2 flex gap-2">
           <div
-            onClick={() => setClick(0)}
+            onClick={() => {
+              setClick(0);
+              setCurrentAnalyt("Community Analytics");
+            }}
             className={`p-2 px-4 text-[14px] h-fit border duration-200 rounded-xl ${
               click === 0 ? "bg-[#307fff] text-white border-[#307fff]" : " "
             }`}
@@ -373,7 +433,7 @@ const Page = () => {
           <div className="w-full h-[calc(100%-60px)]  pn:max-sm:flex-col pn:max-sm:p-2 pn:max-sm:overflow-auto pn:max-sm:overflew-y-scroll flex gap-2 ">
             <div className="  w-[30%] pn:max-sm:h-full pn:max-sm:w-full rounded-3xl sm:overflow-hidden bg-white space-y-1 ">
               {/* select community */}
-              <div className=" bg-slate-50 relative h-[60px] rounded-t-3xl border p-2">
+              <div className=" bg-slate-50 relative h-[60px] z-10 rounded-t-3xl border p-2">
                 <div
                   onClick={() => setOpen(!open)}
                   className="flex w-full justify-between items-center border p-1 rounded-t-2xl bg-white"
@@ -394,7 +454,7 @@ const Page = () => {
                   <RiArrowDropDownLine />
                 </div>
                 {open ? (
-                  <div className="py-2 rounded-b-2xl border   overflow-auto">
+                  <div className="py-2 rounded-b-2xl border  bg-white z-50 overflow-auto">
                     {comdata.map((d, i: number) => (
                       <div
                         key={i}
@@ -402,10 +462,11 @@ const Page = () => {
                           setComindex(i);
                           setCommunityId(d?._id);
                           fetchComAnalytics(d?._id);
-                          setTopicId("");
+
                           setOpen(!open);
+                          setTopicId(comdata?.[comindex]?.topics?.[0]?._id);
                         }}
-                        className="flex w-full justify-between items-center p-1 bg-white"
+                        className="flex w-full justify-between items-center p-1 cursor-pointer hover:bg-slate-50 bg-white"
                       >
                         <div className="flex items-center bg-white gap-2">
                           <div className="w-[30px] h-[30px] rounded-xl border">
@@ -424,19 +485,19 @@ const Page = () => {
                 ) : null}
               </div>
               {/* poplarity  */}
-              {/* <div className="h-[150px]  w-full -z-40 border ">
-                <Card className="flex h-full -z-20 flex-col shadow-none p-2 border-none rounded-3xl">
-                  <CardContent className="flex h-full flex-1 items-center pb-0">
+              <div className="h-[200px] bg-red-300 z-0  w-full  border ">
+                <div className="flex h-full bg-yellow-300 flex-col shadow-none border-none">
+                  <div className="flex h-full bg-white flex-1 items-center pb-0">
                     <ChartContainer
-                      config={chartConfig}
-                      className="mx-auto h-full flex aspect-square w-full max-w-[250px]"
+                      config={chartPopularity}
+                      className="mx-auto h-full  bg-blue-500 aspect-square w-full "
                     >
                       <RadialBarChart
                         data={chartDatas}
                         endAngle={180}
                         innerRadius={80}
-                        outerRadius={130}
-                        className="w-full h-full  bg-white  "
+                        outerRadius={120}
+                        className="w-full pt-14 bg-white text-green-400 flex justify-center items-center"
                       >
                         <ChartTooltip
                           cursor={false}
@@ -446,7 +507,7 @@ const Page = () => {
                           tick={false}
                           tickLine={false}
                           axisLine={false}
-                          className="pt-10"
+                          className="pt-10 "
                         >
                           <Label
                             content={({ viewBox }) => {
@@ -466,7 +527,7 @@ const Page = () => {
                                       y={(viewBox.cy || 0) - 16}
                                       className="fill-foreground text-2xl font-bold"
                                     >
-                                      {totalVisitors.toLocaleString()}%
+                                      {popularity}%
                                     </tspan>
                                     <tspan
                                       x={viewBox.cx}
@@ -482,24 +543,24 @@ const Page = () => {
                           />
                         </PolarRadiusAxis>
                         <RadialBar
-                          dataKey="desktop"
+                          dataKey="total"
+                          fill="gray"
                           stackId="a"
                           cornerRadius={5}
-                          fill="var(--color-desktop)"
                           className="stroke-transparent stroke-2"
                         />
                         <RadialBar
-                          dataKey="Active_member"
-                          fill="var(--color-Active_member)"
+                          dataKey="popularity"
                           stackId="a"
                           cornerRadius={5}
+                          fill="red"
                           className="stroke-transparent stroke-2"
                         />
                       </RadialBarChart>
                     </ChartContainer>
-                  </CardContent>
-                </Card>
-              </div> */}
+                  </div>
+                </div>
+              </div>
               {/* topic  */}
               <div className="p-2 hover:bg-slate-50 active:bg-slate-100  h-[50px] w-full border flex justify-between items-center">
                 Topics
@@ -591,7 +652,7 @@ const Page = () => {
 
                                     return engagementRate.toFixed(1) + "%"; // Display with 2 decimal places
                                   })()
-                                : "N/A"}
+                                : "0%"}
                             </div>
                           </div>
                         )
@@ -896,7 +957,7 @@ const Page = () => {
             {(!StoreAnalytics?.data?.storeid ||
               !data?.isStoreVerified ||
               data?.isStoreVerified === "pending") && (
-              <div className="w-full h-[calc(100%-60px)] bg-white  pn:max-sm:flex-col pn:max-sm:p-2 pn:max-sm:overflow-auto pn:max-sm:overflew-y-scroll flex flex-col gap-2 items-center justify-center">
+              <div className="w-full h-[calc(100%-60px)] bg-red-300  pn:max-sm:flex-col pn:max-sm:p-2 pn:max-sm:overflow-auto pn:max-sm:overflew-y-scroll flex flex-col gap-2 items-center justify-center">
                 <div className="text-black font-semibold"> Create Store</div>
                 <Link
                   href="/main/Store"
@@ -913,24 +974,24 @@ const Page = () => {
                   <div className="h-full w-full flex  flex-col  space-y-2  rounded-2xl">
                     <div className="w-full h-[150px] flex items-center  justify-center gap-2 rounded-2xl ">
                       {/* Upper 1st */}
-                      <div className="w-[50%] flex flex-col justify-between  p-2 h-full bg-white border rounded-t-2xl">
+                      <div className="w-[50%] flex flex-col justify-evenly  p-2 h-full  border rounded-t-2xl">
                         <div className=" w-full flex items-center gap-2">
                           <div className="rounded-2xl bg-blue-100 w-10 h-10 flex justify-center items-center">
                             <PiClipboardText className="text-[#6DACE7] text-[25px]" />
                           </div>
                           <div className="text-[#667085] font-semibold">
-                            Earnings
+                            Products
                           </div>
                         </div>
                         <div className="text-[25px] font-bold w-full text-center">
                           0
                         </div>
-                        <div className=" text-[#ABABAB] text-[12px] w-full px-2">
+                        {/* <div className=" text-[#ABABAB] text-[12px] w-full px-2">
                           5% in the last 1 month
-                        </div>
+                        </div> */}
                       </div>
                       {/* Upper 2nd */}
-                      <div className="w-[50%] h-full flex flex-col justify-between p-2 bg-white border rounded-t-2xl">
+                      <div className="w-[50%] h-full flex flex-col justify-evenly p-2 bg-white border rounded-t-2xl">
                         <div className=" w-full flex items-center gap-2">
                           <div className="rounded-2xl bg-purple-100 w-10 h-10 flex justify-center items-center">
                             <BsPeople className="text-[#AA7AEB] text-[25px]" />
@@ -942,9 +1003,9 @@ const Page = () => {
                         <div className="text-[25px] font-bold text-center w-full">
                           0
                         </div>
-                        <div className=" text-[#ABABAB] text-[12px] w-full px-2">
+                        {/* <div className=" text-[#ABABAB] text-[12px] w-full px-2">
                           3% in the last 1 month
-                        </div>
+                        </div> */}
                       </div>
                     </div>
                     {/* track order */}
@@ -958,7 +1019,9 @@ const Page = () => {
                           <div className="text-[#667085] text-[14px] font-medium">
                             All orders
                           </div>
-                          <div className="text-center">0</div>
+                          <div className="text-center">
+                            {StoreAnalytics?.data?.storeid?.totalOrders || 0}
+                          </div>
                         </div>
                         <div className="flex flex-col items-center ">
                           <div className="rounded-full bg-red-100 w-10 h-10 flex justify-center items-center">
@@ -967,7 +1030,9 @@ const Page = () => {
                           <div className="text-[#667085] text-[14px] font-medium">
                             Pending
                           </div>
-                          <div className="text-center">0</div>
+                          <div className="text-center">
+                            {StoreAnalytics?.data?.storeid?.pendingOrders || 0}
+                          </div>
                         </div>
                         <div className=" flex flex-col items-center">
                           <div className="rounded-full bg-green-100 w-10 h-10 flex justify-center items-center">
@@ -976,41 +1041,48 @@ const Page = () => {
                           <div className="text-[#667085] text-[14px] font-medium">
                             Completed
                           </div>
-                          <div className="text-center">0</div>
+                          <div className="text-center">
+                            {StoreAnalytics?.data?.storeid?.completedOrders ||
+                              0}
+                          </div>
                         </div>
                       </div>
                     </div>
-                    <div className="border bg-white w-full h-[calc(100%-250px)] flex items-center justify-center rounded-b-2xl"></div>
+
+                    <div className="border  w-full h-[calc(100%-250px)] bg-white flex items-center justify-center rounded-b-2xl">
+                      <ComingSoon />
+                    </div>
                   </div>
                 </div>
-
+                {/* Right Overview Store portion */}
                 <div className="h-full w-[70%] pn:max-sm:w-full   pn:max-sm:h-full sm:overflow-auto  space-y-2">
                   {/* header  */}
-                  <div className="h-[50px] bg-white rounded-t-xl border px-2 flex items-center w-full">
+                  <div className="h-[50px] bg-gray-100 rounded-t-xl border px-2 flex items-center w-full">
                     <div>{currentAnalyt}</div>
                   </div>
 
-                  <div className="h-[calc(100%-60px)] bg-white  w-full relative  overflow-hidden border rounded-b-2xl">
+                  <div className="h-[calc(100%-300px)] w-full relative  overflow-hidden border-t border-dashed border-r p-2 ">
                     {currentAnalyt === "Store Analytics" ? (
-                      <Card className="h-[calc(100%-100px)]  w-full shadow-none  border-none">
+                      <Card className="h-[calc(100%)]  w-full shadow-none border-none">
                         {chartDatastore?.length > 0 ? (
-                          <CardContent className="flex h-full flex-1 items-center pb-0">
-                            <div className="w-full">
+                          <div className="flex h-full   w-full items-center">
+                            <ResponsiveContainer
+                              width="100%"
+                              height="100%"
+                              className=""
+                            >
                               <BarChart
-                                width={500}
-                                height={300}
                                 data={chartDatastore}
-                                margin={{ left: 12, right: 12 }}
+                                className="w-full  "
                               >
                                 <CartesianGrid
-                                  vertical={false}
                                   strokeDasharray="2 2"
                                   stroke="#e5e7eb"
+                                  strokeOpacity={0.7}
+                                  strokeWidth={1}
                                 />
                                 <XAxis
                                   dataKey="date"
-                                  tickLine={false}
-                                  axisLine={false}
                                   tickMargin={8}
                                   minTickGap={16}
                                   tickFormatter={(value) => {
@@ -1020,6 +1092,11 @@ const Page = () => {
                                       day: "numeric",
                                     });
                                   }}
+                                />
+                                <YAxis
+                                  tickMargin={2}
+                                  tickFormatter={(value) => value}
+                                  width={35}
                                 />
                                 <Tooltip
                                   formatter={(value, name) => {
@@ -1047,36 +1124,35 @@ const Page = () => {
                                     )
                                   }
                                 />
-
                                 <Bar
                                   dataKey="visitors"
                                   fill="#4f46e5"
-                                  radius={[4, 4, 0, 0]}
-                                  barSize={20}
+                                  radius={[1, 1, 0, 0]}
+                                  barSize={10}
                                 />
                                 <Bar
                                   dataKey="addedtocart"
                                   fill="#10b981"
-                                  radius={[4, 4, 0, 0]}
-                                  barSize={20}
+                                  radius={[1, 1, 0, 0]}
+                                  barSize={10}
                                 />
                                 <Bar
                                   dataKey="totalorders"
                                   fill="#facc15"
-                                  radius={[4, 4, 0, 0]}
-                                  barSize={20}
+                                  radius={[1, 1, 0, 0]}
+                                  barSize={10}
                                 />
                                 <Bar
                                   dataKey="cancelledorders"
                                   fill="#ef4444"
-                                  radius={[4, 4, 0, 0]}
-                                  barSize={20}
+                                  radius={[1, 1, 0, 0]}
+                                  barSize={10}
                                 />
                               </BarChart>
-                            </div>
-                          </CardContent>
+                            </ResponsiveContainer>
+                          </div>
                         ) : (
-                          <div className=" font-bold pt-4 self-center flex items-center text-slate-500 justify-center">
+                          <div className="font-bold pt-4 self-center flex items-center text-slate-500 justify-center">
                             Register Store
                           </div>
                         )}
@@ -1162,22 +1238,10 @@ const Page = () => {
                       </div>
                     )}
                   </div>
+                  <div className="h-[calc(230px)]   overflow ">
+                    <Order />
+                  </div>
                 </div>
-
-                {/* {showPopup && (
-              <div className="absolute inset-0 backdrop-blur-sm bg-gray-600 bg-opacity-50 flex items-center justify-center z-10">
-                <div className="bg-white p-6 rounded-2xl shadow-lg text-center flex flex-col items-center">
-                  <Lottie
-                    animationData={comingSoonAnimation}
-                    className="w-40 h-40"
-                  />
-
-                  <p className="text-gray-600 mt-2 font-medium">
-                    This feature is under development.
-                  </p>
-                </div>
-              </div>
-            )} */}
               </div>
             ) : (
               <div>No Store Analytics available</div>

@@ -47,6 +47,7 @@ const PageContent: React.FC = () => {
       );
 
       if (response.data?.success) {
+        console.log(response.data.posts, "response.data.posts");
         setPostData(response.data.posts);
       }
     } catch (err) {
